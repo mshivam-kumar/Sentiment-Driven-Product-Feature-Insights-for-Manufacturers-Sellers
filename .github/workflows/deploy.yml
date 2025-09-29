@@ -1,0 +1,142 @@
+name: Deploy Sentiment Insights App
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.11]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements_deploy.txt
+        pip install pytest pytest-cov
+    
+    - name: Run tests
+      run: |
+        pytest tests/ -v --cov=. --cov-report=xml
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements_deploy.txt
+        pip install transformers torch spacy yake
+    
+    - name: Download spaCy model
+      run: |
+        python -m spacy download en_core_web_sm
+    
+    - name: Create deployment package
+      run: |
+        python deploy_models.py
+    
+    - name: Deploy to Streamlit Cloud
+      uses: streamlit/streamlit-action@v1
+      with:
+        app-file: deployment/app.py
+        app-name: sentiment-insights
+        app-url: ${{ secrets.STREAMLIT_APP_URL }}
+        streamlit-token: ${{ secrets.STREAMLIT_TOKEN }}
+    
+    - name: Deploy to Heroku (Alternative)
+      if: false  # Set to true if you want to deploy to Heroku
+      uses: akhileshns/heroku-deploy@v3.12.12
+      with:
+        heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+        heroku_app_name: "sentiment-insights"
+        heroku_email: ${{ secrets.HEROKU_EMAIL }}
+        appdir: "deployment"
+        procfile: "Procfile"
+        usedocker: false
+
+  deploy-aws-lambda:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+    
+    - name: Deploy Lambda functions
+      run: |
+        # Deploy inference Lambda
+        cd inference/lambda_inference
+        zip -r inference_function.zip .
+        aws lambda update-function-code \
+          --function-name sentiment-insights-inference \
+          --zip-file fileb://inference_function.zip
+        
+        # Deploy API Lambda
+        cd ../../api
+        zip -r api_function.zip .
+        aws lambda update-function-code \
+          --function-name sentiment-insights-api \
+          --zip-file fileb://api_function.zip
+    
+    - name: Update API Gateway
+      run: |
+        aws apigateway put-rest-api \
+          --rest-api-id ${{ secrets.API_GATEWAY_ID }} \
+          --body file://api/openapi.yaml
+
+  notify:
+    needs: [build-and-deploy, deploy-aws-lambda]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Notify deployment status
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+      if: always()
