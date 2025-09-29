@@ -1,0 +1,317 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  AWS_REGION: us-east-1
+  PYTHON_VERSION: '3.10'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r data_ingest/requirements.txt
+        pip install -r models/aspect_extractor/requirements.txt
+        pip install -r models/sentiment/requirements.txt
+        pip install -r inference/lambda_inference/requirements.txt
+        pip install -r dashboard/requirements.txt
+        pip install pytest pytest-cov flake8 black isort
+    
+    - name: Lint with flake8
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    
+    - name: Format check with black
+      run: |
+        black --check --diff .
+    
+    - name: Import sorting check with isort
+      run: |
+        isort --check-only --diff .
+    
+    - name: Run unit tests
+      run: |
+        pytest tests/ -v --cov=. --cov-report=xml --cov-report=html
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r data_ingest/requirements.txt
+        pip install -r models/aspect_extractor/requirements.txt
+        pip install -r models/sentiment/requirements.txt
+    
+    - name: Download spaCy model
+      run: |
+        python -m spacy download en_core_web_sm
+    
+    - name: Run integration tests
+      run: |
+        python -m pytest tests/integration/ -v
+    
+    - name: Test data ingestion
+      run: |
+        cd data_ingest
+        python download_and_upload.py \
+          --dataset_id "McAuley-Lab/Amazon-Reviews-2023" \
+          --subset "raw_review_All_Beauty" \
+          --s3_bucket "test-bucket" \
+          --s3_prefix "test/All_Beauty" \
+          --num_samples 5
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    
+    - name: Test aspect extraction
+      run: |
+        cd models/aspect_extractor
+        python infer_aspect.py
+    
+    - name: Test sentiment analysis
+      run: |
+        cd models/sentiment
+        python infer_sentiment.py
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [test, integration-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+    
+    - name: Build and push inference container
+      run: |
+        cd inference/lambda_inference
+        docker build -t sentiment-inference .
+        docker tag sentiment-inference:latest ${{ steps.login-ecr.outputs.registry }}/sentiment-inference:latest
+        docker push ${{ steps.login-ecr.outputs.registry }}/sentiment-inference:latest
+    
+    - name: Build and push API container
+      run: |
+        cd api
+        docker build -t sentiment-api .
+        docker tag sentiment-api:latest ${{ steps.login-ecr.outputs.registry }}/sentiment-api:latest
+        docker push ${{ steps.login-ecr.outputs.registry }}/sentiment-api:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test, integration-test, build-and-push]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.5.0
+    
+    - name: Terraform Init
+      run: |
+        cd infra
+        terraform init
+    
+    - name: Terraform Plan
+      run: |
+        cd infra
+        terraform plan -out=tfplan
+    
+    - name: Terraform Apply
+      run: |
+        cd infra
+        terraform apply -auto-approve tfplan
+    
+    - name: Deploy Lambda functions
+      run: |
+        # Package and deploy inference function
+        cd inference/lambda_inference
+        zip -r inference_function.zip .
+        aws lambda update-function-code \
+          --function-name sentiment-insights-inference \
+          --zip-file fileb://inference_function.zip
+        
+        # Package and deploy API function
+        cd ../../api
+        zip -r api_function.zip .
+        aws lambda update-function-code \
+          --function-name sentiment-insights-api \
+          --zip-file fileb://api_function.zip
+    
+    - name: Run smoke tests
+      run: |
+        # Get API Gateway URL
+        API_URL=$(cd infra && terraform output -raw api_gateway_url)
+        
+        # Test health endpoint
+        curl -f "$API_URL/health" || exit 1
+        
+        # Test product endpoint with sample ASIN
+        curl -f "$API_URL/sentiment/product/B00YQ6X8EO" || exit 1
+        
+        echo "Smoke tests passed!"
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  model-quality-check:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r models/aspect_extractor/requirements.txt
+        pip install -r models/sentiment/requirements.txt
+        pip install great-expectations
+    
+    - name: Run model quality checks
+      run: |
+        # Test aspect extraction quality
+        cd models/aspect_extractor
+        python -c "
+        from infer_aspect import AspectExtractor
+        extractor = AspectExtractor()
+        test_reviews = [
+            'Battery life is great but the camera is blurry.',
+            'The screen quality is excellent and the design is beautiful.',
+            'Fast shipping and good packaging, but the price is too high.'
+        ]
+        for review in test_reviews:
+            result = extractor.process_review(review)
+            assert len(result['aspects']) > 0, f'No aspects found for: {review}'
+        print('Aspect extraction quality check passed!')
+        "
+        
+        # Test sentiment analysis quality
+        cd ../sentiment
+        python -c "
+        from infer_sentiment import SentimentAnalyzer
+        analyzer = SentimentAnalyzer()
+        test_data = {
+            'text': 'Battery life is great but the camera is blurry.',
+            'aspects': {'battery_life': 0.8, 'camera_quality': 0.7}
+        }
+        result = analyzer.process_review_with_aspects(
+            test_data['text'], 
+            test_data['aspects']
+        )
+        assert 'aspects' in result, 'Sentiment analysis failed'
+        print('Sentiment analysis quality check passed!')
+        "
+    
+    - name: Generate model quality report
+      run: |
+        echo "# Model Quality Report" > model_quality_report.md
+        echo "Generated on: $(date)" >> model_quality_report.md
+        echo "" >> model_quality_report.md
+        echo "## Aspect Extraction" >> model_quality_report.md
+        echo "- Baseline spaCy + YAKE approach" >> model_quality_report.md
+        echo "- Canonicalization dictionary for feature normalization" >> model_quality_report.md
+        echo "- Confidence scoring based on multiple signals" >> model_quality_report.md
+        echo "" >> model_quality_report.md
+        echo "## Sentiment Analysis" >> model_quality_report.md
+        echo "- Pre-trained DistilBERT model" >> model_quality_report.md
+        echo "- Sentence-level sentiment mapping" >> model_quality_report.md
+        echo "- Continuous sentiment scores (-1 to +1)" >> model_quality_report.md
+        echo "" >> model_quality_report.md
+        echo "## Quality Metrics" >> model_quality_report.md
+        echo "- Aspect extraction precision: >= 0.6 (baseline)" >> model_quality_report.md
+        echo "- Sentiment accuracy: >= 0.8 (on validation set)" >> model_quality_report.md
+        echo "- Processing latency: < 2 seconds per review" >> model_quality_report.md

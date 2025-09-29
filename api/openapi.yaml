@@ -1,0 +1,339 @@
+openapi: 3.0.0
+info:
+  title: Sentiment-Driven Product Feature Insights API
+  description: API for extracting and analyzing product feature sentiments from Amazon reviews
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+  - url: https://staging-api.example.com/v1
+    description: Staging server
+
+paths:
+  /sentiment/product/{asin}:
+    get:
+      summary: Get product sentiment insights
+      description: Retrieve aggregated sentiment insights for a specific product
+      parameters:
+        - name: asin
+          in: path
+          required: true
+          description: Amazon Standard Identification Number
+          schema:
+            type: string
+            example: "B00YQ6X8EO"
+        - name: feature
+          in: query
+          required: false
+          description: Specific feature to analyze
+          schema:
+            type: string
+            example: "battery_life"
+        - name: window
+          in: query
+          required: false
+          description: Time window for analysis (e.g., 30d, 7d, 1y)
+          schema:
+            type: string
+            default: "30d"
+            example: "30d"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductSentimentResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /sentiment/product/{asin}/top-features:
+    get:
+      summary: Get top features for a product
+      description: Retrieve the top features by sentiment score for a specific product
+      parameters:
+        - name: asin
+          in: path
+          required: true
+          description: Amazon Standard Identification Number
+          schema:
+            type: string
+            example: "B00YQ6X8EO"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of features to return
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 50
+        - name: sort
+          in: query
+          required: false
+          description: Sort order (score, count, name)
+          schema:
+            type: string
+            enum: [score, count, name]
+            default: "score"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopFeaturesResponse'
+        '404':
+          description: Product not found
+        '500':
+          description: Internal server error
+
+  /sentiment/search:
+    get:
+      summary: Search features across categories
+      description: Search for features across different product categories
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Search query for features
+          schema:
+            type: string
+            example: "battery"
+        - name: category
+          in: query
+          required: false
+          description: Product category to search in
+          schema:
+            type: string
+            example: "All_Beauty"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of results to return
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+
+  /health:
+    get:
+      summary: Health check
+      description: Check the health of the API service
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+components:
+  schemas:
+    ProductSentimentResponse:
+      type: object
+      properties:
+        asin:
+          type: string
+          description: Product ASIN
+          example: "B00YQ6X8EO"
+        parent_asin:
+          type: string
+          description: Parent product ASIN
+          example: "B00YQ6X8EO"
+        features:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/FeatureSentiment'
+        overall_sentiment:
+          type: number
+          format: float
+          description: Overall sentiment score (-1 to 1)
+          example: 0.75
+        total_reviews:
+          type: integer
+          description: Total number of reviews analyzed
+          example: 150
+        last_updated:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        category:
+          type: string
+          description: Product category
+          example: "All_Beauty"
+
+    FeatureSentiment:
+      type: object
+      properties:
+        score:
+          type: number
+          format: float
+          description: Average sentiment score (-1 to 1)
+          example: 0.8
+        count:
+          type: integer
+          description: Number of mentions
+          example: 25
+        positive_snippets:
+          type: array
+          items:
+            type: string
+          description: Positive review snippets
+          example: ["Battery life is excellent", "Great battery performance"]
+        negative_snippets:
+          type: array
+          items:
+            type: string
+          description: Negative review snippets
+          example: ["Battery drains quickly", "Poor battery life"]
+        trend:
+          type: string
+          enum: [increasing, decreasing, stable]
+          description: Sentiment trend over time
+          example: "increasing"
+
+    TopFeaturesResponse:
+      type: object
+      properties:
+        asin:
+          type: string
+          example: "B00YQ6X8EO"
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureRanking'
+        total_features:
+          type: integer
+          description: Total number of features found
+          example: 15
+
+    FeatureRanking:
+      type: object
+      properties:
+        feature:
+          type: string
+          description: Feature name
+          example: "battery_life"
+        score:
+          type: number
+          format: float
+          description: Average sentiment score
+          example: 0.8
+        count:
+          type: integer
+          description: Number of mentions
+          example: 25
+        rank:
+          type: integer
+          description: Ranking position
+          example: 1
+
+    SearchResponse:
+      type: object
+      properties:
+        query:
+          type: string
+          example: "battery"
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchResult'
+        total_results:
+          type: integer
+          description: Total number of results found
+          example: 45
+
+    SearchResult:
+      type: object
+      properties:
+        asin:
+          type: string
+          example: "B00YQ6X8EO"
+        feature:
+          type: string
+          example: "battery_life"
+        score:
+          type: number
+          format: float
+          example: 0.8
+        count:
+          type: integer
+          example: 25
+        category:
+          type: string
+          example: "All_Beauty"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Product not found"
+        code:
+          type: string
+          description: Error code
+          example: "PRODUCT_NOT_FOUND"
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+tags:
+  - name: sentiment
+    description: Sentiment analysis operations
+  - name: products
+    description: Product-related operations
+  - name: features
+    description: Feature analysis operations
