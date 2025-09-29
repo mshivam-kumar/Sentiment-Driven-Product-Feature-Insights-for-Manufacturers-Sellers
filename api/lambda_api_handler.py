@@ -43,6 +43,11 @@ class SentimentAPIHandler:
                 days = self._parse_time_window(window)
             cutoff_time = int((datetime.now() - timedelta(days=days)).timestamp() * 1000)
             
+            # For historical data (like Amazon reviews from 2014-2020), use a much longer window
+            # Amazon reviews are typically from 2014-2020, so use 10 years as minimum
+            if days < 365 * 10:
+                cutoff_time = int((datetime.now() - timedelta(days=365 * 10)).timestamp() * 1000)
+            
             # Query DynamoDB
             if feature:
                 # Get specific feature

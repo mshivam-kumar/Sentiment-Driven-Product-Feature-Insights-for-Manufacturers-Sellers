@@ -120,14 +120,43 @@ class AspectExtractor:
                 if len(phrase) > 2:
                     noun_phrases.append(phrase)
             return noun_phrases
-        # Fallback: simple regex to capture sequences of adjectives and nouns
-        tokens = re.findall(r"[A-Za-z][A-Za-z\-']+", text.lower())
-        for i in range(len(tokens) - 1):
-            candidate = f"{tokens[i]} {tokens[i+1]}".strip()
-            if len(candidate) > 2:
-                noun_phrases.append(candidate)
-        # also include single tokens for generality
-        noun_phrases.extend([t for t in tokens if len(t) > 3])
+        # Fallback: more selective regex to capture meaningful product aspects
+        # Look for common product-related patterns
+        product_patterns = [
+            r'\b(battery\s+life|battery\s+performance|battery\s+power)\b',
+            r'\b(camera\s+quality|camera\s+performance|camera\s+resolution)\b',
+            r'\b(design\s+quality|build\s+quality|construction\s+quality)\b',
+            r'\b(sound\s+quality|audio\s+quality|sound\s+performance)\b',
+            r'\b(display\s+quality|screen\s+quality|display\s+resolution)\b',
+            r'\b(performance|speed|efficiency|reliability)\b',
+            r'\b(comfort|comfortable|ergonomics|fit)\b',
+            r'\b(durability|longevity|sturdiness|robustness)\b',
+            r'\b(ease\s+of\s+use|usability|user\s+experience)\b',
+            r'\b(value\s+for\s+money|value|price\s+performance)\b',
+            r'\b(customer\s+service|support|warranty)\b',
+            r'\b(shipping|delivery|packaging)\b',
+            r'\b(quality|material|finish|texture)\b',
+            r'\b(size|weight|dimensions|portability)\b',
+            r'\b(style|appearance|look|aesthetics)\b'
+        ]
+        
+        for pattern in product_patterns:
+            matches = re.findall(pattern, text.lower())
+            noun_phrases.extend(matches)
+        
+        # Also look for simple meaningful single words
+        meaningful_words = [
+            'battery', 'camera', 'design', 'quality', 'performance', 'sound', 
+            'display', 'screen', 'comfort', 'durability', 'usability', 'value',
+            'service', 'shipping', 'material', 'size', 'weight', 'style',
+            'price', 'cost', 'warranty', 'support', 'delivery', 'packaging'
+        ]
+        
+        words = re.findall(r'\b\w+\b', text.lower())
+        for word in words:
+            if word in meaningful_words and len(word) > 3:
+                noun_phrases.append(word)
+        
         return list(dict.fromkeys(noun_phrases))
     
     def extract_keywords(self, text: str) -> List[tuple]:
@@ -187,8 +216,16 @@ class AspectExtractor:
             canonical = self.canonicalize_aspect(keyword)
             aspect_scores[canonical] = aspect_scores.get(canonical, 0) + score * 0.2
         
-        # Filter out aspects with very low scores
-        filtered_aspects = {k: v for k, v in aspect_scores.items() if v > 0.1}
+        # Filter out aspects with very low scores and meaningless aspects
+        filtered_aspects = {}
+        for k, v in aspect_scores.items():
+            # Only keep meaningful aspects
+            if (v > 0.3 and 
+                len(k) > 3 and 
+                not k in ['the', 'and', 'or', 'but', 'for', 'with', 'this', 'that', 'these', 'those'] and
+                not re.match(r'^[a-z]+\s+[a-z]+$', k) or  # Allow meaningful bigrams
+                k in ['battery', 'camera', 'design', 'quality', 'performance', 'sound', 'display', 'comfort', 'durability', 'value', 'service', 'shipping', 'material', 'size', 'weight', 'style']):
+                filtered_aspects[k] = v
         
         # Fallback: if nothing extracted, use a generic 'product' aspect so downstream stays robust
         if not filtered_aspects and text and len(text.split()) >= 3:

@@ -13,16 +13,12 @@ import sys
 import traceback
 from decimal import Decimal
 from time import time as _time
-# Add the models directory to the path
-sys.path.append('/opt/python')
-sys.path.append('/opt/python/models')
-
+# Import the modules directly since they're in the same directory
 try:
-    from models.aspect_extractor.infer_aspect import AspectExtractor
+    from infer_aspect import AspectExtractor
 except Exception as e:
-    import sys
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-    from models.aspect_extractor.infer_aspect import AspectExtractor
+    print(f"Import error for AspectExtractor: {e}")
+    raise e
 
 # Provide a lightweight sentiment fallback if transformers are unavailable
 class _LightSentiment:
@@ -72,9 +68,10 @@ class _LightSentiment:
         return {"review_id": review_id, "asin": asin, "text": review_text or "", "aspects": mapping, "overall_sentiment": overall}
 
 try:
-    from models.sentiment.infer_sentiment import SentimentAnalyzer as _FullSentiment
+    from infer_sentiment import SentimentAnalyzer as _FullSentiment
     SentimentAnalyzer = _FullSentiment
-except Exception:
+except Exception as e:
+    print(f"Import error for SentimentAnalyzer: {e}")
     SentimentAnalyzer = _LightSentiment
 
 
