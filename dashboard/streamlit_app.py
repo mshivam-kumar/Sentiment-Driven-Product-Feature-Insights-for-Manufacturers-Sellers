@@ -711,12 +711,13 @@ def main():
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            # Initialize session state for ASIN using the widget key
+            # ASIN input with examples
+            st.markdown("**Enter Product ASIN:**")
+            
+            # Initialize with default if not set
             if 'asin_input' not in st.session_state:
                 st.session_state.asin_input = DEFAULT_ASIN
             
-            # ASIN input with examples
-            st.markdown("**Enter Product ASIN:**")
             asin = st.text_input(
                 "Product ASIN",
                 help="Enter the Amazon Standard Identification Number",
@@ -728,9 +729,13 @@ def main():
             example_cols = st.columns(3)
             for i, (asin_example, description) in enumerate(example_asins.items()):
                 with example_cols[i % 3]:
-                    if st.button(f"📱 {asin_example}", help=description, key=f"example_{asin_example}"):
-                        st.session_state.asin_input = asin_example
-                        st.rerun()
+                    # Use on_click callback instead of manual state update
+                    st.button(
+                        f"📱 {asin_example}", 
+                        help=description, 
+                        key=f"example_{asin_example}",
+                        on_click=lambda val=asin_example: st.session_state.update(asin_input=val)
+                    )
         
         with col2:
             feature_filter = st.text_input(
@@ -764,12 +769,13 @@ def main():
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            # Initialize session state for search using the widget key
+            # Search input with examples
+            st.markdown("**Search for a Feature:**")
+            
+            # Initialize with default if not set
             if 'search_input' not in st.session_state:
                 st.session_state.search_input = 'quality'
             
-            # Search input with examples
-            st.markdown("**Search for a Feature:**")
             search_query = st.text_input(
                 "Search Query",
                 help="Search for features across products",
@@ -781,9 +787,13 @@ def main():
             example_cols = st.columns(4)
             for i, feature_example in enumerate(example_features):
                 with example_cols[i % 4]:
-                    if st.button(f"🔍 {feature_example}", help=f"Search for {feature_example}", key=f"feature_{feature_example}"):
-                        st.session_state.search_input = feature_example
-                        st.rerun()
+                    # Use on_click callback instead of manual state update
+                    st.button(
+                        f"🔍 {feature_example}", 
+                        help=f"Search for {feature_example}", 
+                        key=f"feature_{feature_example}",
+                        on_click=lambda val=feature_example: st.session_state.update(search_input=val)
+                    )
         
         with col2:
             category_filter = st.selectbox(
@@ -854,15 +864,21 @@ def main():
             st.markdown("**💡 Example questions to try:**")
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("🔍 Quality Analysis", help="Ask about product quality"):
-                    st.session_state.user_question_input = "What do customers say about product quality?"
-                    st.rerun()
+                st.button(
+                    "🔍 Quality Analysis", 
+                    help="Ask about product quality",
+                    key="quality_btn",
+                    on_click=lambda: st.session_state.update(user_question_input="What do customers say about product quality?")
+                )
             with col2:
-                if st.button("💡 Design Feedback", help="Ask about design"):
-                    st.session_state.user_question_input = "How do customers feel about the design?"
-                    st.rerun()
+                st.button(
+                    "💡 Design Feedback", 
+                    help="Ask about design",
+                    key="design_btn",
+                    on_click=lambda: st.session_state.update(user_question_input="How do customers feel about the design?")
+                )
             
-            # User input
+            # User input (outside form so buttons can populate it)
             user_question = st.text_input(
                 "Ask your question:",
                 placeholder="e.g., What do customers say about the battery life?",
@@ -883,8 +899,8 @@ def main():
                             'timestamp': datetime.now().strftime("%H:%M:%S")
                         })
                         
-                        # Clear the input after processing
-                        st.session_state.user_question_input = ''
+                        # Note: Input will remain after asking (useful for follow-up questions)
+                        # User can manually clear it if needed
                         st.rerun()
                 else:
                     st.warning("Please enter a question!")
@@ -916,7 +932,6 @@ def main():
                 if st.button("🗑️ Clear Chat History"):
                     st.session_state.chat_history = []
                     st.rerun()
-
 
 def display_product_analysis(data, dashboard):
     """Display product analysis results."""
