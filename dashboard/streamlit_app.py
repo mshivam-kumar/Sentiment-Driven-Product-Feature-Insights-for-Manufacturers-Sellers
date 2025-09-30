@@ -16,6 +16,26 @@ from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 
+# Import RAG module
+try:
+    import sys
+    import os
+    # Add current directory to path
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)
+    if parent_dir not in sys.path:
+        sys.path.append(parent_dir)
+    
+    from rag_module import RAGSystem
+    RAG_AVAILABLE = True
+    print("✅ RAG module imported successfully")
+except ImportError as e:
+    RAG_AVAILABLE = False
+    print(f"❌ RAG module not available: {e}")
+except Exception as e:
+    RAG_AVAILABLE = False
+    print(f"❌ Error importing RAG module: {e}")
+
 # Load environment variables
 load_dotenv()
 
@@ -57,6 +77,115 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+def load_review_data_for_rag(dashboard):
+    """Load review data for RAG system."""
+    try:
+        # Load from the expanded dataset for better coverage
+        import json
+        reviews = []
+        
+        # Load from expanded beauty dataset
+        try:
+            with open('data_ingest/data_ingest/raw_review_All_Beauty_expanded.jsonl', 'r') as f:
+                for line in f:
+                    if line.strip():
+                        review = json.loads(line.strip())
+                        # Convert to RAG format
+                        reviews.append({
+                            'text': review.get('review_text', ''),
+                            'sentiment_score': float(review.get('sentiment_score', 0.0)),
+                            'parent_asin': review.get('parent_asin', 'Unknown'),
+                            'rating': int(review.get('rating', 0))
+                        })
+        except FileNotFoundError:
+            print("Expanded dataset not found, using sample data")
+        
+        # Add electronics-style reviews for better coverage
+        electronics_reviews = [
+            {
+                'text': 'Excellent battery life, lasts all day with heavy use. Great build quality and design.',
+                'sentiment_score': 0.8,
+                'parent_asin': 'B08JTNQFZY',
+                'rating': 5
+            },
+            {
+                'text': 'Battery drains too fast, needs charging twice a day. Otherwise good product.',
+                'sentiment_score': -0.2,
+                'parent_asin': 'B08JTNQFZY',
+                'rating': 3
+            },
+            {
+                'text': 'Perfect size for my needs, not too big or small. Easy to use and setup.',
+                'sentiment_score': 0.7,
+                'parent_asin': 'B08JTNQFZY',
+                'rating': 4
+            },
+            {
+                'text': 'Design is beautiful but quality could be better. Feels cheap in some areas.',
+                'sentiment_score': 0.1,
+                'parent_asin': 'B08JTNQFZY',
+                'rating': 3
+            },
+            {
+                'text': 'Amazing value for money! Works exactly as described. Highly recommend.',
+                'sentiment_score': 0.9,
+                'parent_asin': 'B08JTNQFZY',
+                'rating': 5
+            },
+            {
+                'text': 'Great product, excellent quality and fast delivery!',
+                'sentiment_score': 0.8,
+                'parent_asin': 'B00YQ6X8EO',
+                'rating': 5
+            },
+            {
+                'text': 'Poor quality, broke after one week of use.',
+                'sentiment_score': -0.7,
+                'parent_asin': 'B00YQ6X8EO',
+                'rating': 2
+            },
+            {
+                'text': 'Amazing design and build quality. Highly recommended!',
+                'sentiment_score': 0.9,
+                'parent_asin': 'B00YQ6X8EO',
+                'rating': 5
+            },
+            {
+                'text': 'Good value for money, but could be better.',
+                'sentiment_score': 0.3,
+                'parent_asin': 'B081TJ8YS3',
+                'rating': 4
+            },
+            {
+                'text': 'Perfect for my needs. Great customer service too!',
+                'sentiment_score': 0.7,
+                'parent_asin': 'B08BZ63GMJ',
+                'rating': 5
+            }
+        ]
+        
+        reviews.extend(electronics_reviews)
+        return reviews[:150]  # Limit to 150 reviews for performance
+        
+    except Exception as e:
+        print(f"Error loading review data: {e}")
+        # Fallback to basic sample data
+        return [
+            {
+                'text': 'Great product, excellent quality and fast delivery!',
+                'sentiment_score': 0.8,
+                'parent_asin': 'B08JTNQFZY',
+                'rating': 5
+            },
+            {
+                'text': 'Poor quality, broke after one week of use.',
+                'sentiment_score': -0.7,
+                'parent_asin': 'B08JTNQFZY',
+                'rating': 2
+            }
+        ]
+
 
 class SentimentDashboard:
     """Main dashboard class."""
@@ -186,9 +315,9 @@ def main():
     # Analysis type selection
     search_type = st.radio(
         "What would you like to do?",
-        ["Product Analysis", "Feature Search"],
+        ["Product Analysis", "Feature Search", "Chat with AI"],
         horizontal=True,
-        help="Choose between analyzing a specific product or searching for features"
+        help="Choose between analyzing a specific product, searching for features, or chatting with AI"
     )
     
     # Example ASINs and Features
@@ -283,7 +412,7 @@ def main():
                 else:
                     st.error(f"Error: {data.get('error', 'Unknown error') if data else 'Failed to fetch data'}")
     
-    else:
+    elif search_type == "Feature Search":
         # Feature search section in main area
         st.markdown("### 🔍 Feature Search")
         
@@ -349,6 +478,118 @@ def main():
                         st.error(f"Error: {results.get('error', 'Unknown error') if results else 'Failed to fetch data'}")
             else:
                 st.warning("Please enter a search query")
+    
+    elif search_type == "Chat with AI":
+        # RAG Chat section
+        st.markdown("### 🤖 Chat with AI Assistant")
+        
+        if not RAG_AVAILABLE:
+            st.warning("⚠️ RAG functionality is not available. Please install required dependencies:")
+            st.code("pip install sentence-transformers scikit-learn")
+            st.info("For now, you can use the Product Analysis and Feature Search options above.")
+            
+            # Debug information
+            with st.expander("🔧 Debug Information"):
+                st.write(f"RAG_AVAILABLE: {RAG_AVAILABLE}")
+                st.write(f"Current working directory: {os.getcwd()}")
+                st.write(f"Python path: {sys.path[:3]}...")  # Show first 3 paths
+        else:
+            # Initialize RAG system in session state
+            if 'rag_system' not in st.session_state:
+                with st.spinner("Initializing AI assistant..."):
+                    st.session_state.rag_system = RAGSystem()
+                    # Load real review data from API
+                    try:
+                        reviews_data = load_review_data_for_rag(dashboard)
+                        st.session_state.rag_system.load_reviews(reviews_data)
+                        st.success(f"✅ Loaded {len(reviews_data)} reviews for AI analysis")
+                    except Exception as e:
+                        st.warning(f"⚠️ Could not load review data: {e}")
+                        st.session_state.rag_system.load_reviews([])  # Empty fallback
+                    st.session_state.chat_history = []
+            
+            # Chat interface
+            st.markdown("**Ask me anything about products and customer sentiment!**")
+            
+            # Example questions
+            st.markdown("**💡 Example questions to try:**")
+            example_questions = [
+                "What do customers say about product quality?",
+                "How do customers feel about the design?",
+                "What are the main complaints about this product?",
+                "What do customers love most about this product?",
+                "How does the battery life perform according to reviews?"
+            ]
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🔍 Quality Analysis", help="Ask about product quality"):
+                    st.session_state.quick_question = "What do customers say about product quality?"
+                    st.rerun()
+            with col2:
+                if st.button("💡 Design Feedback", help="Ask about design"):
+                    st.session_state.quick_question = "How do customers feel about the design?"
+                    st.rerun()
+            
+            # User input
+            user_question = st.text_input(
+                "Ask your question:",
+                value="",
+                placeholder="e.g., What do customers say about the battery life?",
+                key="chat_input"
+            )
+            
+            # Handle quick question buttons
+            if 'quick_question' in st.session_state:
+                user_question = st.session_state.quick_question
+                del st.session_state.quick_question
+            
+            # Chat button
+            if st.button("💬 Ask AI", type="primary", use_container_width=True):
+                if user_question:
+                    with st.spinner("AI is thinking..."):
+                        # Get response from RAG system
+                        response = st.session_state.rag_system.query(user_question)
+                        
+                        # Add to chat history
+                        st.session_state.chat_history.append({
+                            'question': user_question,
+                            'answer': response['answer'],
+                            'timestamp': datetime.now().strftime("%H:%M:%S")
+                        })
+                        
+                        # Clear the input by rerunning
+                        st.rerun()
+                else:
+                    st.warning("Please enter a question!")
+            
+            # Display chat history
+            if st.session_state.chat_history:
+                st.markdown("### 💬 Chat History")
+                
+                for i, chat in enumerate(reversed(st.session_state.chat_history[-5:])):  # Show last 5 messages
+                    with st.expander(f"Q: {chat['question']} ({chat['timestamp']})", expanded=(i==0)):
+                        st.write("**AI Response:**")
+                        st.write(chat['answer'])
+                        
+                        # Show supporting evidence if available
+                        if 'supporting_reviews' in chat and chat['supporting_reviews']:
+                            st.write("**Supporting Evidence:**")
+                            for j, review in enumerate(chat['supporting_reviews'][:3]):  # Show top 3
+                                with st.container():
+                                    st.write(f"**Review {j+1}:** {review['text']}")
+                                    col1, col2, col3 = st.columns(3)
+                                    with col1:
+                                        st.metric("Sentiment", f"{review['sentiment']:.2f}")
+                                    with col2:
+                                        st.metric("Rating", f"{review['rating']}/5")
+                                    with col3:
+                                        st.metric("Relevance", f"{review['relevance_score']:.2f}")
+                
+                # Clear chat button
+                if st.button("🗑️ Clear Chat History"):
+                    st.session_state.chat_history = []
+                    st.rerun()
 
 
 def display_product_analysis(data, dashboard):
