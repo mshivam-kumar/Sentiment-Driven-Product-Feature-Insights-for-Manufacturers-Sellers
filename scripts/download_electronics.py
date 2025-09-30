@@ -1,70 +1,52 @@
 #!/usr/bin/env python3
 """
-Download Electronics category from Amazon Reviews dataset.
+Download Electronics category data from Hugging Face dataset
 """
 
-import json
 import os
+import sys
+import json
 from datasets import load_dataset
 
 def download_electronics_data():
-    """Download Electronics category data."""
+    """Download Electronics category data"""
     try:
-        print("Downloading Electronics category from Amazon Reviews dataset...")
+        print("📥 Downloading Electronics category data...")
         
-        # Load the Electronics dataset
-        dataset = load_dataset(
-            'McAuley-Lab/Amazon-Reviews-2023', 
-            'raw_review_Electronics', 
-            split='full',
-            streaming=False
-        )
+        # Load the dataset
+        dataset = load_dataset("McAuley-Lab/Amazon-Reviews-2023", "Electronics", split="train")
         
-        print(f"Electronics dataset loaded successfully!")
-        print(f"Total reviews: {len(dataset)}")
+        print(f"✅ Loaded {len(dataset)} Electronics reviews")
         
-        # Create output directory if it doesn't exist
-        output_dir = "data_ingest/data_ingest"
-        os.makedirs(output_dir, exist_ok=True)
+        # Convert to JSONL format
+        output_file = "data_ingest/data_ingest/raw_review_Electronics.jsonl"
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
         
-        # Save first 100 samples to JSONL file
-        samples_to_save = 100
-        output_file = os.path.join(output_dir, "raw_review_Electronics.jsonl")
+        with open(output_file, 'w') as f:
+            for i, item in enumerate(dataset):
+                if i >= 1000:  # Limit to 1000 reviews for now
+                    break
+                    
+                # Convert to our format
+                review_data = {
+                    'review_text': item.get('review_text', ''),
+                    'parent_asin': item.get('parent_asin', ''),
+                    'rating': item.get('rating', 0),
+                    'category': 'Electronics'
+                }
+                
+                f.write(json.dumps(review_data) + '\n')
         
-        with open(output_file, 'w', encoding='utf-8') as f:
-            for i in range(min(samples_to_save, len(dataset))):
-                sample = dataset[i]
-                f.write(json.dumps(sample) + '\n')
-        
-        print(f"Saved {samples_to_save} Electronics reviews to {output_file}")
-        
-        # Show sample data
-        print("\nSample Electronics reviews:")
-        for i in range(min(3, len(dataset))):
-            sample = dataset[i]
-            print(f"\nSample {i+1}:")
-            print(f"  ASIN: {sample.get('asin', 'N/A')}")
-            print(f"  Rating: {sample.get('rating', 'N/A')}")
-            print(f"  Title: {sample.get('title', 'N/A')}")
-            print(f"  Text: {sample.get('text', 'N/A')[:200]}...")
-        
+        print(f"✅ Saved {min(1000, len(dataset))} Electronics reviews to {output_file}")
         return True
         
     except Exception as e:
-        print(f"Error downloading Electronics data: {e}")
-        print("This might be due to:")
-        print("1. Network connectivity issues")
-        print("2. Dataset availability on Hugging Face")
-        print("3. Authentication requirements")
+        print(f"❌ Error downloading Electronics data: {e}")
         return False
 
 if __name__ == "__main__":
     success = download_electronics_data()
     if success:
-        print("\n✅ Electronics data downloaded successfully!")
+        print("🎉 Electronics data download completed!")
     else:
-        print("\n❌ Failed to download Electronics data")
-        print("You may need to:")
-        print("1. Check your internet connection")
-        print("2. Try again later")
-        print("3. Use a different category that's already cached")
+        print("💥 Electronics data download failed!")

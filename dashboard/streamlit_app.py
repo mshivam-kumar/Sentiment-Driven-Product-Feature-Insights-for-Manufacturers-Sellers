@@ -1,5 +1,5 @@
 """
-Streamlit Dashboard for Sentiment-Driven Product Feature Insights
+Streamlit Dashboard for SellerIQ - Smart Product Analytics for Sellers
 
 This dashboard provides visualization and analysis of product sentiment insights
 extracted from Amazon reviews.
@@ -45,7 +45,7 @@ DEFAULT_ASIN = 'B08JTNQFZY'
 
 # Page configuration
 st.set_page_config(
-    page_title="Product Sentiment Insights",
+    page_title="SellerIQ - Smart Product Analytics",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -267,7 +267,7 @@ def main():
     dashboard = SentimentDashboard()
     
     # Header with prominent branding
-    st.markdown('<h1 class="main-header">📊 Sentiment-Driven Product Feature Insights</h1>', 
+    st.markdown('<h1 class="main-header">📊 SellerIQ - Smart Product Analytics</h1>', 
                 unsafe_allow_html=True)
     
     # Prominent branding
@@ -284,7 +284,7 @@ def main():
     # Information section
     with st.expander("ℹ️ How to Use This App", expanded=False):
         st.markdown("""
-        **Welcome to the Sentiment-Driven Product Feature Insights App!**
+        **Welcome to SellerIQ - Smart Product Analytics for Sellers!**
         
         This app helps manufacturers and sellers understand customer sentiment about specific product features.
         
@@ -794,7 +794,7 @@ def display_search_results(results, dashboard):
     st.markdown(
         """
         <div style='text-align: center; color: #666;'>
-            <p>📊 Sentiment-Driven Product Feature Insights | Powered by AWS & Streamlit</p>
+            <p>📊 SellerIQ - Smart Product Analytics | Powered by AWS & Streamlit</p>
             <p>Built with ❤️ for manufacturers and sellers</p>
         </div>
         """,
