@@ -911,16 +911,29 @@ def main():
             if 'rag_system' not in st.session_state:
                 with st.spinner("Initializing AI assistant..."):
                     st.session_state.rag_system = RAGSystem()
+                    # Try load cached index first
+                    cache_dir = os.path.join(os.path.dirname(__file__), '.rag_cache')
+                    cache_hit = st.session_state.rag_system.load_index(cache_dir)
                     # Load real review data from API
                     try:
-                        reviews_data = load_review_data_for_rag(dashboard)
-                        st.session_state.rag_system.load_reviews(reviews_data)
+                        if not cache_hit:
+                            reviews_data = load_review_data_for_rag(dashboard)
+                            st.session_state.rag_system.load_reviews(reviews_data)
+                            st.session_state.rag_system.save_index(cache_dir)
                         st.success(f"✅ Loaded")
                     except Exception as e:
                         st.warning(f"⚠️ Could not load review data: {e}")
                         st.session_state.rag_system.load_reviews([])  # Empty fallback
                     st.session_state.chat_history = []
             
+            # Observability banner
+            with st.container():
+                try:
+                    num_reviews = len(st.session_state.rag_system.reviews_data)
+                except Exception:
+                    num_reviews = 0
+                st.caption(f"RAG: reviews={num_reviews} | model=all-mpnet-base-v2 | top_k=10")
+
             # Chat interface
             st.markdown("**Ask me anything about products and customer sentiment!**")
             

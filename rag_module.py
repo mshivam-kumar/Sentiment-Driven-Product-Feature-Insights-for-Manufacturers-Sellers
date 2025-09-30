@@ -56,6 +56,9 @@ class RAGSystem:
                 print(f"❌ Failed to load embeddings model: {e}")
                 # Don't modify global variable, just set local flag
                 self.embeddings_model = None
+        
+        # Cache state
+        self._cache_loaded = False
     
     def load_reviews(self, reviews_data: List[Dict[str, Any]]):
         """Load review data for RAG processing."""
@@ -78,6 +81,59 @@ class RAGSystem:
             print("✅ Reviews embedded successfully")
         else:
             print("⚠️ No valid review texts found")
+
+    def save_index(self, cache_dir: str) -> bool:
+        """Persist embeddings and minimal metadata for fast reloads.
+        Files:
+          - embeddings.npy
+          - reviews_meta.json (order-aligned with embeddings)
+        """
+        try:
+            import os
+            import json
+            import numpy as np
+            os.makedirs(cache_dir, exist_ok=True)
+            if self.review_embeddings is None or not self.reviews_data:
+                print("⚠️ Nothing to cache: embeddings or reviews missing")
+                return False
+            np.save(os.path.join(cache_dir, "embeddings.npy"), self.review_embeddings)
+            # Persist minimal fields to reconstruct contexts
+            meta = []
+            for r in self.reviews_data:
+                meta.append({
+                    'text': r.get('text') or r.get('review_text') or '',
+                    'sentiment_score': float(r.get('sentiment_score', 0.0)),
+                    'parent_asin': r.get('parent_asin') or r.get('asin') or '',
+                    'rating': int(r.get('rating', 0))
+                })
+            with open(os.path.join(cache_dir, "reviews_meta.json"), 'w') as f:
+                json.dump(meta, f)
+            print(f"💾 Cached embeddings to {cache_dir}")
+            return True
+        except Exception as e:
+            print(f"❌ Failed to save cache: {e}")
+            return False
+
+    def load_index(self, cache_dir: str) -> bool:
+        """Load persisted embeddings and metadata if available."""
+        try:
+            import os
+            import json
+            import numpy as np
+            emb_path = os.path.join(cache_dir, "embeddings.npy")
+            meta_path = os.path.join(cache_dir, "reviews_meta.json")
+            if not (os.path.exists(emb_path) and os.path.exists(meta_path)):
+                return False
+            self.review_embeddings = np.load(emb_path)
+            with open(meta_path, 'r') as f:
+                meta = json.load(f)
+            self.reviews_data = meta
+            self._cache_loaded = True
+            print(f"⚡ Loaded cached embeddings from {cache_dir} ({len(self.reviews_data)} reviews)")
+            return True
+        except Exception as e:
+            print(f"❌ Failed to load cache: {e}")
+            return False
     
     def search_relevant_reviews(self, query: str, top_k: int = 10) -> List[ReviewContext]:
         """
