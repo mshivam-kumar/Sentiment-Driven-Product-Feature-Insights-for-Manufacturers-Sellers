@@ -97,9 +97,9 @@ def load_review_data_for_rag(dashboard):
                     for line in f:
                         if line.strip():
                             review = json.loads(line.strip())
-                            # Convert to RAG format
+                            # Convert to RAG format - use 'text' field from the actual data
                             reviews.append({
-                                'text': review.get('review_text', ''),
+                                'text': review.get('text', ''),
                                 'sentiment_score': float(review.get('sentiment_score', 0.0)),
                                 'parent_asin': review.get('parent_asin', 'Unknown'),
                                 'rating': int(review.get('rating', 0))
@@ -121,7 +121,7 @@ def load_review_data_for_rag(dashboard):
                                 if line.strip():
                                     review = json.loads(line.strip())
                                     reviews.append({
-                                        'text': review.get('review_text', ''),
+                                        'text': review.get('text', ''),
                                         'sentiment_score': float(review.get('sentiment_score', 0.0)),
                                         'parent_asin': review.get('parent_asin', 'Unknown'),
                                         'rating': int(review.get('rating', 0))
@@ -535,17 +535,19 @@ def main():
                     try:
                         reviews_data = load_review_data_for_rag(dashboard)
                         st.session_state.rag_system.load_reviews(reviews_data)
-                        st.success(f"✅ Loaded {len(reviews_data)} reviews for AI analysis")
+                        # st.success(f"✅ Loaded {len(reviews_data)} reviews for AI analysis")
+                        st.success(f"✅ Loaded")
+                        
                         
                         # Debug information
-                        with st.expander("🔧 Debug: Review Loading Details"):
-                            st.write(f"**Total reviews loaded:** {len(reviews_data)}")
-                            if reviews_data:
-                                sample_review = reviews_data[0]
-                                st.write(f"**Sample review structure:** {list(sample_review.keys())}")
-                                st.write(f"**Sample review text:** {sample_review.get('text', '')[:100]}...")
-                            else:
-                                st.write("**No reviews loaded**")
+                        # with st.expander("🔧 Debug: Review Loading Details"):
+                        #     st.write(f"**Total reviews loaded:** {len(reviews_data)}")
+                        #     if reviews_data:
+                        #         sample_review = reviews_data[0]
+                        #         st.write(f"**Sample review structure:** {list(sample_review.keys())}")
+                        #         st.write(f"**Sample review text:** {sample_review.get('text', '')[:100]}...")
+                        #     else:
+                        #         st.write("**No reviews loaded**")
                     except Exception as e:
                         st.warning(f"⚠️ Could not load review data: {e}")
                         st.session_state.rag_system.load_reviews([])  # Empty fallback
@@ -567,28 +569,34 @@ def main():
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("🔍 Quality Analysis", help="Ask about product quality"):
-                    st.session_state.quick_question = "What do customers say about product quality?"
+                    st.session_state.quick_question_text = "What do customers say about product quality?"
+                    st.session_state.quick_question_clicked = True
                     st.rerun()
             with col2:
                 if st.button("💡 Design Feedback", help="Ask about design"):
-                    st.session_state.quick_question = "How do customers feel about the design?"
+                    st.session_state.quick_question_text = "How do customers feel about the design?"
+                    st.session_state.quick_question_clicked = True
                     st.rerun()
             
             # User input
             user_question = st.text_input(
                 "Ask your question:",
-                value=st.session_state.get('quick_question', ''),
+                value=st.session_state.get('quick_question_text', ''),
                 placeholder="e.g., What do customers say about the battery life?",
-                key="chat_input"
+                key="user_question_input"
             )
             
-            # Clear quick_question from session state after it's used (but only if it matches the current input)
-            if 'quick_question' in st.session_state and st.session_state.quick_question == user_question:
-                del st.session_state.quick_question
+            # Don't clear session state here - let the text input handle it naturally
             
             # Chat button
             if st.button("💬 Ask AI", type="primary", use_container_width=True):
-                if user_question:
+                # Debug: Show what we're working with
+                if 'quick_question_text' in st.session_state:
+                    st.write(f"🔧 Debug: quick_question_text = '{st.session_state.quick_question_text}'")
+                st.write(f"🔧 Debug: user_question = '{user_question}'")
+                st.write(f"🔧 Debug: user_question length = {len(user_question) if user_question else 0}")
+                
+                if user_question and user_question.strip():
                     with st.spinner("AI is thinking..."):
                         # Get response from RAG system
                         response = st.session_state.rag_system.query(user_question)
@@ -600,7 +608,11 @@ def main():
                             'timestamp': datetime.now().strftime("%H:%M:%S")
                         })
                         
-                        # Clear the input by rerunning
+                        # Clear the input and flags after successful processing
+                        if 'quick_question_text' in st.session_state:
+                            del st.session_state.quick_question_text
+                        if 'quick_question_clicked' in st.session_state:
+                            del st.session_state.quick_question_clicked
                         st.rerun()
                 else:
                     st.warning("Please enter a question!")
