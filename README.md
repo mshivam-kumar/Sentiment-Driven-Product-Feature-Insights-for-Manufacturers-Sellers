@@ -75,6 +75,29 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
+#### Optional: RAG configuration
+Create a `.env` file in `dashboard/` to enable expanded RAG context:
+```
+# API base URL for the backend
+API_BASE_URL=https://<your-api-id>.execute-api.<region>.amazonaws.com/dev
+
+# RAG settings
+# S3 or local JSONL path containing one review JSON per line
+RAG_REVIEWS_SOURCE=s3://<bucket>/raw/All_Beauty/raw_review_All_Beauty_expanded.jsonl
+# Maximum reviews to embed (increase for richer context)
+RAG_REVIEWS_MAX=5000
+```
+
+On Streamlit Cloud or other hosting, set these as environment variables in the deployment settings (do not commit real values).
+
+For local development only, you can export them in your shell instead of using `.env`:
+```bash
+export API_BASE_URL="https://<your-api-id>.execute-api.<region>.amazonaws.com/dev"
+export RAG_REVIEWS_SOURCE="s3://<bucket>/raw/All_Beauty/raw_review_All_Beauty_expanded.jsonl"
+export RAG_REVIEWS_MAX=5000
+```
+Note: these exports are not required (and not recommended) on hosted deployments—use the platform's environment settings instead.
+
 ## Environment Variables
 
 Create a `.env` file with:
