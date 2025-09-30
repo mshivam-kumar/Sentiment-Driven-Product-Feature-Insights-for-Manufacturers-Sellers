@@ -315,7 +315,7 @@ def main():
     # Analysis type selection
     search_type = st.radio(
         "What would you like to do?",
-        ["Product Analysis", "Feature Search", "Chat with AI"],
+        ["Product Analysis", "Feature Search", "Chat with AI Assistant"],
         horizontal=True,
         help="Choose between analyzing a specific product, searching for features, or chatting with AI"
     )
