@@ -45,7 +45,7 @@ DEFAULT_ASIN = 'B08JTNQFZY'
 
 # Page configuration
 st.set_page_config(
-    page_title="SellerIQ - Smart Product Analytics",
+    page_title="SellerIQ - A Smart Product Analytics For Sellers",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -267,7 +267,7 @@ def main():
     dashboard = SentimentDashboard()
     
     # Header with prominent branding
-    st.markdown('<h1 class="main-header">📊 SellerIQ - Smart Product Analytics</h1>', 
+    st.markdown('<h1 class="main-header">📊 SellerIQ - A Smart Product Analytics For Sellers</h1>', 
                 unsafe_allow_html=True)
     
     # Prominent branding
@@ -284,7 +284,7 @@ def main():
     # Information section
     with st.expander("ℹ️ How to Use This App", expanded=False):
         st.markdown("""
-        **Welcome to SellerIQ - Smart Product Analytics for Sellers!**
+        **Welcome to SellerIQ - A Smart Product Analytics For Sellers!**
         
         This app helps manufacturers and sellers understand customer sentiment about specific product features.
         
@@ -479,7 +479,7 @@ def main():
             else:
                 st.warning("Please enter a search query")
     
-    elif search_type == "Chat with AI":
+    elif search_type == "Chat with AI Assistant":
         # RAG Chat section
         st.markdown("### 🤖 Chat with AI Assistant")
         
@@ -794,7 +794,7 @@ def display_search_results(results, dashboard):
     st.markdown(
         """
         <div style='text-align: center; color: #666;'>
-            <p>📊 SellerIQ - Smart Product Analytics | Powered by AWS & Streamlit</p>
+            <p>📊 SellerIQ - A Smart Product Analytics For Sellers | Powered by AWS & Streamlit</p>
             <p>Built with ❤️ for manufacturers and sellers</p>
         </div>
         """,
