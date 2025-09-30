@@ -91,6 +91,33 @@ This project uses the McAuley-Lab/Amazon-Reviews-2023 dataset from Hugging Face:
 - Dataset: https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023
 - License: Please refer to the dataset's license terms
 
+## Results
+
+The project has generated three detailed result reports in PDF format, each spanning two pages:
+
+| Product Analysis Report                             | Search Feature Analysis Report                       | AI Assistant Chat Report                            |
+|----------------------------------------------------|-----------------------------------------------------|----------------------------------------------------|
+| [Hair Product Analysis.pdf](docs/results/hair_product_analysis.pdf) | [Style Search Feature Analysis.pdf](docs/results/style_search_feature_analysis.pdf) | [AI Assistant Chat.pdf](docs/results/AI_assistant_chat.pdf) |
+
+### Preview of results (page snapshots):
+
+<p float="left">
+  <img src="docs/results/prod_analysis.png" width="200" />
+  <img src="docs/results/prod_analysis_page2.png" width="200" />
+</p>
+
+<p float="left">
+  <img src="docs/results/feature_search.png" width="200" />
+  <img src="docs/results/feature_search_page2.png" width="200" />
+</p>
+
+<p float="left">
+  <img src="docs/results/ai_assistant_chat.png" width="200" />
+  <img src="docs/results/ai_assistant_chat_page2.png" width="200" />
+</p>
+
+
+
 ## Contributing
 
 1. Fork the repository
