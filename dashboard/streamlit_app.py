@@ -20,8 +20,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuration
-API_BASE_URL = os.getenv('API_BASE_URL', 'https://api.example.com/v1')
-DEFAULT_ASIN = 'B00YQ6X8EO'
+API_BASE_URL = os.getenv('API_BASE_URL', 'https://f3157r5ca4.execute-api.us-east-1.amazonaws.com/dev')
+DEFAULT_ASIN = 'B08JTNQFZY'
 
 # Page configuration
 st.set_page_config(
@@ -137,44 +137,141 @@ def main():
     """Main dashboard function."""
     dashboard = SentimentDashboard()
     
-    # Header
-    st.markdown('<h1 class="main-header">📊 Product Sentiment Insights Dashboard</h1>', 
+    # Header with prominent branding
+    st.markdown('<h1 class="main-header">📊 Sentiment-Driven Product Feature Insights</h1>', 
                 unsafe_allow_html=True)
     
-    # Sidebar
-    st.sidebar.title("🔍 Search & Filter")
+    # Prominent branding
+    st.markdown(
+        """
+        <div style='text-align: center; background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem;'>
+            <h3 style='color: #1f77b4; margin: 0;'>Designed by Shivam Kumar</h3>
+            <p style='color: #666; margin: 0.5rem 0 0 0; font-weight: bold;'>IIT Gandhinagar</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     
-    # Search options
-    search_type = st.sidebar.radio(
-        "Search Type",
+    # Information section
+    with st.expander("ℹ️ How to Use This App", expanded=False):
+        st.markdown("""
+        **Welcome to the Sentiment-Driven Product Feature Insights App!**
+        
+        This app helps manufacturers and sellers understand customer sentiment about specific product features.
+        
+        ### 🎯 **Product Analysis**
+        - Enter an Amazon ASIN (product ID) to see sentiment analysis for different features
+        - Use the example ASINs in the sidebar for quick testing
+        - Filter by specific features to focus on particular aspects
+        
+        ### 🔍 **Feature Search**
+        - Search for a specific feature across all products in the database
+        - See which products perform best for that feature
+        - Compare sentiment scores across different products
+        
+        ### 📊 **Understanding the Results**
+        - **Sentiment Score**: Ranges from -1 (very negative) to +1 (very positive)
+        - **Review Count**: Number of reviews analyzed for that feature
+        - **Trend**: Indicates if sentiment is improving, declining, or stable
+        
+        ### 💡 **Tips for Best Results**
+        - Try the example ASINs first to see the app in action
+        - Use common feature names like "quality", "design", "performance"
+        - The app works best with products that have multiple reviews
+        """)
+    
+    # Main search interface in the center
+    st.markdown("### 🔍 Choose Your Analysis")
+    
+    # Analysis type selection
+    search_type = st.radio(
+        "What would you like to do?",
         ["Product Analysis", "Feature Search"],
+        horizontal=True,
         help="Choose between analyzing a specific product or searching for features"
     )
     
+    # Example ASINs and Features
+    example_asins = {
+        "B08JTNQFZY": "Hair Styling Product (Multiple Features)",
+        "B097YYB2GV": "Beauty Tool (Build Quality Focus)",
+        "B015ZXMSFQ": "Skincare Product (Material & Value)",
+        "B088838886": "Hair Accessory (Design & Quality)",
+        "B07FX94GYX": "Skincare Tool (Performance Focus)"
+    }
+    
+    example_features = [
+        "quality", "design", "performance", "value_for_money", 
+        "build_quality", "customer_service", "style", "material",
+        "battery", "camera", "comfort", "durability"
+    ]
+    
+    # Handle quick start buttons
+    if hasattr(st.session_state, 'quick_analysis_type'):
+        if st.session_state.quick_analysis_type == "Product Analysis" and hasattr(st.session_state, 'quick_asin'):
+            search_type = "Product Analysis"
+            # Clear the session state
+            del st.session_state.quick_analysis_type
+            del st.session_state.quick_asin
+        elif st.session_state.quick_analysis_type == "Feature Search" and hasattr(st.session_state, 'quick_feature'):
+            search_type = "Feature Search"
+            # Clear the session state
+            del st.session_state.quick_analysis_type
+            del st.session_state.quick_feature
+    
     if search_type == "Product Analysis":
-        # Product analysis section
-        st.sidebar.subheader("Product Analysis")
+        # Product analysis section in main area
+        st.markdown("### 📱 Product Analysis")
         
-        asin = st.sidebar.text_input(
-            "Product ASIN",
-            value=DEFAULT_ASIN,
-            help="Enter the Amazon Standard Identification Number"
-        )
+        col1, col2 = st.columns([2, 1])
         
-        feature_filter = st.sidebar.text_input(
-            "Specific Feature (Optional)",
-            help="Filter by a specific feature (e.g., battery_life, camera_quality)"
-        )
+        with col1:
+            # ASIN input with examples
+            st.markdown("**Enter Product ASIN:**")
+            asin = st.text_input(
+                "Product ASIN",
+                value=DEFAULT_ASIN,
+                help="Enter the Amazon Standard Identification Number",
+                key="asin_input"
+            )
+            
+            # Show example ASINs
+            st.markdown("**💡 Example ASINs to try:**")
+            example_cols = st.columns(3)
+            for i, (asin_example, description) in enumerate(example_asins.items()):
+                with example_cols[i % 3]:
+                    if st.button(f"📱 {asin_example}", help=description, key=f"example_{asin_example}"):
+                        # Use a different approach to update the input
+                        st.session_state[f"select_asin_{asin_example}"] = True
+                        st.rerun()
+            
+            # Handle ASIN selection from buttons
+            selected_asin_from_button = None
+            for asin_example in example_asins.keys():
+                if st.session_state.get(f"select_asin_{asin_example}", False):
+                    selected_asin_from_button = asin_example
+                    st.session_state[f"select_asin_{asin_example}"] = False  # Reset the flag
+                    break
+            
+            # Update ASIN input if a button was clicked
+            if selected_asin_from_button:
+                asin = selected_asin_from_button
         
-        time_window = st.sidebar.selectbox(
-            "Time Window",
-            ["All Time", "7d", "30d", "90d", "1y", "10y"],
-            index=0,
-            help="Time window for analysis"
-        )
+        with col2:
+            feature_filter = st.text_input(
+                "Filter by Feature (Optional)",
+                help="Filter by a specific feature (e.g., quality, design, performance)"
+            )
+            
+            time_window = st.selectbox(
+                "Time Window",
+                ["All Time", "7d", "30d", "90d", "1y", "10y"],
+                index=0,
+                help="Time window for analysis"
+            )
         
-        # Fetch and display data
-        if st.sidebar.button("Analyze Product", type="primary"):
+        # Analyze button
+        if st.button("🔍 Analyze Product", type="primary", use_container_width=True):
             with st.spinner("Fetching product sentiment data..."):
                 # Convert "All Time" to None to avoid time filtering
                 window_param = None if time_window == "All Time" else time_window
@@ -186,29 +283,60 @@ def main():
                     st.error(f"Error: {data.get('error', 'Unknown error') if data else 'Failed to fetch data'}")
     
     else:
-        # Feature search section
-        st.sidebar.subheader("Feature Search")
+        # Feature search section in main area
+        st.markdown("### 🔍 Feature Search")
         
-        search_query = st.sidebar.text_input(
-            "Search Query",
-            help="Search for features across products"
-        )
+        col1, col2 = st.columns([2, 1])
         
-        category_filter = st.sidebar.selectbox(
-            "Category (Optional)",
-            ["All", "All_Beauty", "Electronics", "Home", "Sports"],
-            help="Filter by product category"
-        )
+        with col1:
+            # Search input with examples
+            st.markdown("**Search for a Feature:**")
+            search_query = st.text_input(
+                "Search Query",
+                value="quality",
+                help="Search for features across products",
+                key="search_input"
+            )
+            
+            # Show example features
+            st.markdown("**💡 Example features to search:**")
+            example_cols = st.columns(4)
+            for i, feature_example in enumerate(example_features):
+                with example_cols[i % 4]:
+                    if st.button(f"🔍 {feature_example}", help=f"Search for {feature_example}", key=f"feature_{feature_example}"):
+                        # Use a different approach to update the input
+                        st.session_state[f"select_feature_{feature_example}"] = True
+                        st.rerun()
+            
+            # Handle feature selection from buttons
+            selected_feature_from_button = None
+            for feature_example in example_features:
+                if st.session_state.get(f"select_feature_{feature_example}", False):
+                    selected_feature_from_button = feature_example
+                    st.session_state[f"select_feature_{feature_example}"] = False  # Reset the flag
+                    break
+            
+            # Update search input if a button was clicked
+            if selected_feature_from_button:
+                search_query = selected_feature_from_button
         
-        search_limit = st.sidebar.slider(
-            "Max Results",
-            min_value=5,
-            max_value=50,
-            value=20,
-            help="Maximum number of results to display"
-        )
+        with col2:
+            category_filter = st.selectbox(
+                "Category (Optional)",
+                ["All", "All_Beauty", "Electronics", "Home", "Sports"],
+                help="Filter by product category"
+            )
+            
+            search_limit = st.slider(
+                "Max Results",
+                min_value=5,
+                max_value=50,
+                value=20,
+                help="Maximum number of results to display"
+            )
         
-        if st.sidebar.button("Search Features", type="primary"):
+        # Search button
+        if st.button("🔍 Search Features", type="primary", use_container_width=True):
             if search_query:
                 with st.spinner("Searching features..."):
                     category = None if category_filter == "All" else category_filter
@@ -418,6 +546,18 @@ def display_search_results(results, dashboard):
     
     else:
         st.info("No results found for your search query")
+    
+    # Simple footer
+    st.markdown("---")
+    st.markdown(
+        """
+        <div style='text-align: center; color: #666;'>
+            <p>📊 Sentiment-Driven Product Feature Insights | Powered by AWS & Streamlit</p>
+            <p>Built with ❤️ for manufacturers and sellers</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 if __name__ == "__main__":
