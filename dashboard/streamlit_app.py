@@ -276,6 +276,359 @@ class SentimentDashboard:
         else:
             return "Very Negative"
 
+# Works only locally. Does not work on streamlit after deployment 
+
+# def main():
+#     """Main dashboard function."""
+#     dashboard = SentimentDashboard()
+    
+#     # Header with prominent branding
+#     st.markdown('<h1 class="main-header">📊 SellerIQ - A Smart Product Analytics For Sellers</h1>', 
+#                 unsafe_allow_html=True)
+    
+#     # Prominent branding
+#     st.markdown(
+#         """
+#         <div style='text-align: center; background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 2rem;'>
+#             <h3 style='color: #1f77b4; margin: 0;'>Designed by Shivam Kumar</h3>
+#             <p style='color: #666; margin: 0.5rem 0 0 0; font-weight: bold;'>IIT Gandhinagar</p>
+#         </div>
+#         """,
+#         unsafe_allow_html=True
+#     )
+    
+#     # Information section
+#     with st.expander("ℹ️ How to Use This App", expanded=False):
+#         st.markdown("""
+#         **Welcome to SellerIQ - A Smart Product Analytics For Sellers!**
+        
+#         This app helps manufacturers and sellers understand customer sentiment about specific product features.
+        
+#         ### 🎯 **Product Analysis**
+#         - Enter an Amazon ASIN (product ID) to see sentiment analysis for different features
+#         - Use the example ASINs in the sidebar for quick testing
+#         - Filter by specific features to focus on particular aspects
+        
+#         ### 🔍 **Feature Search**
+#         - Search for a specific feature across all products in the database
+#         - See which products perform best for that feature
+#         - Compare sentiment scores across different products
+        
+#         ### 📊 **Understanding the Results**
+#         - **Sentiment Score**: Ranges from -1 (very negative) to +1 (very positive)
+#         - **Review Count**: Number of reviews analyzed for that feature
+#         - **Trend**: Indicates if sentiment is improving, declining, or stable
+        
+#         ### 💡 **Tips for Best Results**
+#         - Try the example ASINs first to see the app in action
+#         - Use common feature names like "quality", "design", "performance"
+#         - The app works best with products that have multiple reviews
+#         """)
+    
+#     # Main search interface in the center
+#     st.markdown("### 🔍 Choose Your Analysis")
+    
+#     # Analysis type selection
+#     search_type = st.radio(
+#         "What would you like to do?",
+#         ["Product Analysis", "Feature Search", "Chat with AI Assistant"],
+#         horizontal=True,
+#         help="Choose between analyzing a specific product, searching for features, or chatting with AI"
+#     )
+    
+#     # Example ASINs and Features
+#     example_asins = {
+#         "B08JTNQFZY": "Hair Styling Product (Multiple Features)",
+#         "B097YYB2GV": "Beauty Tool (Build Quality Focus)", 
+#         "B00YQ6X8EO": "Beauty Product (Quality & Design)",
+#         "B081TJ8YS3": "Beauty Accessory (Performance Focus)",
+#         "B08BZ63GMJ": "Beauty Tool (Value & Material)",
+#         "B00R8DXL44": "Beauty Product (Style & Comfort)"
+#     }
+    
+#     example_features = [
+#         "quality", "design", "performance", "value_for_money", 
+#         "build_quality", "customer_service", "style", "material",
+#         "battery", "camera", "comfort", "durability"
+#     ]
+    
+#     # Handle quick start buttons
+#     if hasattr(st.session_state, 'quick_analysis_type'):
+#         if st.session_state.quick_analysis_type == "Product Analysis" and hasattr(st.session_state, 'quick_asin'):
+#             search_type = "Product Analysis"
+#             # Clear the session state
+#             del st.session_state.quick_analysis_type
+#             del st.session_state.quick_asin
+#         elif st.session_state.quick_analysis_type == "Feature Search" and hasattr(st.session_state, 'quick_feature'):
+#             search_type = "Feature Search"
+#             # Clear the session state
+#             del st.session_state.quick_analysis_type
+#             del st.session_state.quick_feature
+    
+#     if search_type == "Product Analysis":
+#         # Product analysis section in main area
+#         st.markdown("### 📱 Product Analysis")
+        
+#         col1, col2 = st.columns([2, 1])
+        
+#         with col1:
+#             # ASIN input with examples
+#             st.markdown("**Enter Product ASIN:**")
+#             asin = st.text_input(
+#                 "Product ASIN",
+#                 value=st.session_state.get('asin_input_value', DEFAULT_ASIN),
+#                 help="Enter the Amazon Standard Identification Number",
+#                 key="asin_input"
+#             )
+            
+#             # Show example ASINs
+#             st.markdown("**💡 Example ASINs to try:**")
+#             example_cols = st.columns(3)
+#             for i, (asin_example, description) in enumerate(example_asins.items()):
+#                 with example_cols[i % 3]:
+#                     if st.button(f"📱 {asin_example}", help=description, key=f"example_{asin_example}"):
+#                         # Use a different approach to update the input
+#                         # st.session_state[f"select_asin_{asin_example}"] = True
+#                         st.session_state.asin_input_value = asin_example
+#                         st.rerun()
+            
+#             # Handle ASIN selection from buttons
+#             selected_asin_from_button = None
+#             for asin_example in example_asins.keys():
+#                 if st.session_state.get(f"select_asin_{asin_example}", False):
+#                     selected_asin_from_button = asin_example
+#                     st.session_state[f"select_asin_{asin_example}"] = False  # Reset the flag
+#                     break
+            
+#             # Update ASIN input if a button was clicked
+#             if selected_asin_from_button:
+#                 st.session_state.asin_input_value = selected_asin_from_button
+        
+#         with col2:
+#             feature_filter = st.text_input(
+#                 "Filter by Feature (Optional)",
+#                 help="Filter by a specific feature (e.g., quality, design, performance)"
+#             )
+            
+#             time_window = st.selectbox(
+#                 "Time Window",
+#                 ["All Time", "7d", "30d", "90d", "1y", "10y"],
+#                 index=0,
+#                 help="Time window for analysis"
+#             )
+        
+#         # Analyze button
+#         if st.button("🔍 Analyze Product", type="primary", use_container_width=True):
+#             with st.spinner("Fetching product sentiment data..."):
+#                 # Convert "All Time" to None to avoid time filtering
+#                 window_param = None if time_window == "All Time" else time_window
+#                 data = dashboard.fetch_product_sentiment(asin, feature_filter, window_param)
+                
+#                 if data and 'error' not in data:
+#                     display_product_analysis(data, dashboard)
+#                 else:
+#                     st.error(f"Error: {data.get('error', 'Unknown error') if data else 'Failed to fetch data'}")
+    
+#     elif search_type == "Feature Search":
+#         # Feature search section in main area
+#         st.markdown("### 🔍 Feature Search")
+        
+#         col1, col2 = st.columns([2, 1])
+        
+#         with col1:
+#             # Search input with examples
+#             st.markdown("**Search for a Feature:**")
+#             search_query = st.text_input(
+#                 "Search Query",
+#                 value=st.session_state.get('search_input_value', 'quality'),
+#                 help="Search for features across products",
+#                 key="search_input"
+#             )
+            
+#             # Show example features
+#             st.markdown("**💡 Example features to search:**")
+#             example_cols = st.columns(4)
+#             for i, feature_example in enumerate(example_features):
+#                 with example_cols[i % 4]:
+#                     if st.button(f"🔍 {feature_example}", help=f"Search for {feature_example}", key=f"feature_{feature_example}"):
+#                         # Use a different approach to update the input
+#                         st.session_state.search_input_value = feature_example  # Update the value
+#                         st.rerun()
+            
+#             # Handle feature selection from buttons
+#             selected_feature_from_button = None
+#             for feature_example in example_features:
+#                 if st.session_state.get(f"select_feature_{feature_example}", False):
+#                     selected_feature_from_button = feature_example
+#                     st.session_state[f"select_feature_{feature_example}"] = False  # Reset the flag
+#                     break
+            
+#             # Update search input if a button was clicked
+#             if selected_feature_from_button:
+#                 st.session_state.search_input_value = selected_feature_from_button
+        
+#         with col2:
+#             category_filter = st.selectbox(
+#                 "Category (Optional)",
+#                 ["All", "All_Beauty", "Electronics", "Home", "Sports"],
+#                 help="Filter by product category"
+#             )
+            
+#             search_limit = st.slider(
+#                 "Max Results",
+#                 min_value=5,
+#                 max_value=50,
+#                 value=20,
+#                 help="Maximum number of results to display"
+#             )
+        
+#         # Search button
+#         if st.button("🔍 Search Features", type="primary", use_container_width=True):
+#             if search_query:
+#                 with st.spinner("Searching features..."):
+#                     category = None if category_filter == "All" else category_filter
+#                     results = dashboard.fetch_search_results(search_query, category, search_limit)
+                    
+#                     if results and 'error' not in results:
+#                         display_search_results(results, dashboard)
+#                     else:
+#                         st.error(f"Error: {results.get('error', 'Unknown error') if results else 'Failed to fetch data'}")
+#             else:
+#                 st.warning("Please enter a search query")
+    
+#     elif search_type == "Chat with AI Assistant":
+#         # RAG Chat section
+#         st.markdown("### 🤖 Chat with AI Assistant")
+        
+#         if not RAG_AVAILABLE:
+#             st.warning("⚠️ RAG functionality is not available. Please install required dependencies:")
+#             st.code("pip install sentence-transformers scikit-learn")
+#             st.info("For now, you can use the Product Analysis and Feature Search options above.")
+            
+#             # Debug information
+#             with st.expander("🔧 Debug Information"):
+#                 st.write(f"RAG_AVAILABLE: {RAG_AVAILABLE}")
+#                 st.write(f"Current working directory: {os.getcwd()}")
+#                 st.write(f"Python path: {sys.path[:3]}...")  # Show first 3 paths
+#         else:
+#             # Initialize RAG system in session state
+#             if 'rag_system' not in st.session_state:
+#                 with st.spinner("Initializing AI assistant..."):
+#                     st.session_state.rag_system = RAGSystem()
+#                     # Load real review data from API
+#                     try:
+#                         reviews_data = load_review_data_for_rag(dashboard)
+#                         st.session_state.rag_system.load_reviews(reviews_data)
+#                         # st.success(f"✅ Loaded {len(reviews_data)} reviews for AI analysis")
+#                         st.success(f"✅ Loaded")
+                        
+                        
+#                         # Debug information
+#                         # with st.expander("🔧 Debug: Review Loading Details"):
+#                         #     st.write(f"**Total reviews loaded:** {len(reviews_data)}")
+#                         #     if reviews_data:
+#                         #         sample_review = reviews_data[0]
+#                         #         st.write(f"**Sample review structure:** {list(sample_review.keys())}")
+#                         #         st.write(f"**Sample review text:** {sample_review.get('text', '')[:100]}...")
+#                         #     else:
+#                         #         st.write("**No reviews loaded**")
+#                     except Exception as e:
+#                         st.warning(f"⚠️ Could not load review data: {e}")
+#                         st.session_state.rag_system.load_reviews([])  # Empty fallback
+#                     st.session_state.chat_history = []
+            
+#             # Chat interface
+#             st.markdown("**Ask me anything about products and customer sentiment!**")
+            
+#             # Example questions
+#             st.markdown("**💡 Example questions to try:**")
+#             example_questions = [
+#                 "What do customers say about product quality?",
+#                 "How do customers feel about the design?",
+#                 "What are the main complaints about this product?",
+#                 "What do customers love most about this product?",
+#                 "How does the battery life perform according to reviews?"
+#             ]
+            
+#             col1, col2 = st.columns(2)
+#             with col1:
+#                 if st.button("🔍 Quality Analysis", help="Ask about product quality"):
+#                     st.session_state.quick_question_text = "What do customers say about product quality?"
+#                     st.session_state.quick_question_clicked = True
+#                     st.rerun()
+#             with col2:
+#                 if st.button("💡 Design Feedback", help="Ask about design"):
+#                     st.session_state.quick_question_text = "How do customers feel about the design?"
+#                     st.session_state.quick_question_clicked = True
+#                     st.rerun()
+            
+#             # User input
+#             user_question = st.text_input(
+#                 "Ask your question:",
+#                 value=st.session_state.get('quick_question_text', ''),
+#                 placeholder="e.g., What do customers say about the battery life?",
+#                 key="user_question_input"
+#             )
+            
+#             # Don't clear session state here - let the text input handle it naturally
+            
+#             # Chat button
+#             if st.button("💬 Ask AI", type="primary", use_container_width=True):
+#                 # Debug: Show what we're working with
+#                 if 'quick_question_text' in st.session_state:
+#                     st.write(f"🔧 Debug: quick_question_text = '{st.session_state.quick_question_text}'")
+#                 st.write(f"🔧 Debug: user_question = '{user_question}'")
+#                 st.write(f"🔧 Debug: user_question length = {len(user_question) if user_question else 0}")
+                
+#                 if user_question and user_question.strip():
+#                     with st.spinner("AI is thinking..."):
+#                         # Get response from RAG system
+#                         response = st.session_state.rag_system.query(user_question)
+                        
+#                         # Add to chat history
+#                         st.session_state.chat_history.append({
+#                             'question': user_question,
+#                             'answer': response['answer'],
+#                             'timestamp': datetime.now().strftime("%H:%M:%S")
+#                         })
+                        
+#                         # Clear the input and flags after successful processing
+#                         if 'quick_question_text' in st.session_state:
+#                             del st.session_state.quick_question_text
+#                         if 'quick_question_clicked' in st.session_state:
+#                             del st.session_state.quick_question_clicked
+#                         st.rerun()
+#                 else:
+#                     st.warning("Please enter a question!")
+            
+#             # Display chat history
+#             if st.session_state.chat_history:
+#                 st.markdown("### 💬 Chat History")
+                
+#                 for i, chat in enumerate(reversed(st.session_state.chat_history[-5:])):  # Show last 5 messages
+#                     with st.expander(f"Q: {chat['question']} ({chat['timestamp']})", expanded=(i==0)):
+#                         st.write("**AI Response:**")
+#                         st.write(chat['answer'])
+                        
+#                         # Show supporting evidence if available
+#                         if 'supporting_reviews' in chat and chat['supporting_reviews']:
+#                             st.write("**Supporting Evidence:**")
+#                             for j, review in enumerate(chat['supporting_reviews'][:3]):  # Show top 3
+#                                 with st.container():
+#                                     st.write(f"**Review {j+1}:** {review['text']}")
+#                                     col1, col2, col3 = st.columns(3)
+#                                     with col1:
+#                                         st.metric("Sentiment", f"{review['sentiment']:.2f}")
+#                                     with col2:
+#                                         st.metric("Rating", f"{review['rating']}/5")
+#                                     with col3:
+#                                         st.metric("Relevance", f"{review['relevance_score']:.2f}")
+                
+#                 # Clear chat button
+#                 if st.button("🗑️ Clear Chat History"):
+#                     st.session_state.chat_history = []
+#                     st.rerun()
+
 
 def main():
     """Main dashboard function."""
@@ -351,19 +704,6 @@ def main():
         "battery", "camera", "comfort", "durability"
     ]
     
-    # Handle quick start buttons
-    if hasattr(st.session_state, 'quick_analysis_type'):
-        if st.session_state.quick_analysis_type == "Product Analysis" and hasattr(st.session_state, 'quick_asin'):
-            search_type = "Product Analysis"
-            # Clear the session state
-            del st.session_state.quick_analysis_type
-            del st.session_state.quick_asin
-        elif st.session_state.quick_analysis_type == "Feature Search" and hasattr(st.session_state, 'quick_feature'):
-            search_type = "Feature Search"
-            # Clear the session state
-            del st.session_state.quick_analysis_type
-            del st.session_state.quick_feature
-    
     if search_type == "Product Analysis":
         # Product analysis section in main area
         st.markdown("### 📱 Product Analysis")
@@ -371,11 +711,15 @@ def main():
         col1, col2 = st.columns([2, 1])
         
         with col1:
+            # Initialize session state for ASIN
+            if 'asin_input_value' not in st.session_state:
+                st.session_state.asin_input_value = DEFAULT_ASIN
+            
             # ASIN input with examples
             st.markdown("**Enter Product ASIN:**")
             asin = st.text_input(
                 "Product ASIN",
-                value=st.session_state.get('asin_input_value', DEFAULT_ASIN),
+                value=st.session_state.asin_input_value,
                 help="Enter the Amazon Standard Identification Number",
                 key="asin_input"
             )
@@ -386,22 +730,8 @@ def main():
             for i, (asin_example, description) in enumerate(example_asins.items()):
                 with example_cols[i % 3]:
                     if st.button(f"📱 {asin_example}", help=description, key=f"example_{asin_example}"):
-                        # Use a different approach to update the input
-                        # st.session_state[f"select_asin_{asin_example}"] = True
                         st.session_state.asin_input_value = asin_example
                         st.rerun()
-            
-            # Handle ASIN selection from buttons
-            selected_asin_from_button = None
-            for asin_example in example_asins.keys():
-                if st.session_state.get(f"select_asin_{asin_example}", False):
-                    selected_asin_from_button = asin_example
-                    st.session_state[f"select_asin_{asin_example}"] = False  # Reset the flag
-                    break
-            
-            # Update ASIN input if a button was clicked
-            if selected_asin_from_button:
-                st.session_state.asin_input_value = selected_asin_from_button
         
         with col2:
             feature_filter = st.text_input(
@@ -435,11 +765,15 @@ def main():
         col1, col2 = st.columns([2, 1])
         
         with col1:
+            # Initialize session state for search
+            if 'search_input_value' not in st.session_state:
+                st.session_state.search_input_value = 'quality'
+            
             # Search input with examples
             st.markdown("**Search for a Feature:**")
             search_query = st.text_input(
                 "Search Query",
-                value=st.session_state.get('search_input_value', 'quality'),
+                value=st.session_state.search_input_value,
                 help="Search for features across products",
                 key="search_input"
             )
@@ -450,21 +784,8 @@ def main():
             for i, feature_example in enumerate(example_features):
                 with example_cols[i % 4]:
                     if st.button(f"🔍 {feature_example}", help=f"Search for {feature_example}", key=f"feature_{feature_example}"):
-                        # Use a different approach to update the input
-                        st.session_state.search_input_value = feature_example  # Update the value
+                        st.session_state.search_input_value = feature_example
                         st.rerun()
-            
-            # Handle feature selection from buttons
-            selected_feature_from_button = None
-            for feature_example in example_features:
-                if st.session_state.get(f"select_feature_{feature_example}", False):
-                    selected_feature_from_button = feature_example
-                    st.session_state[f"select_feature_{feature_example}"] = False  # Reset the flag
-                    break
-            
-            # Update search input if a button was clicked
-            if selected_feature_from_button:
-                st.session_state.search_input_value = selected_feature_from_button
         
         with col2:
             category_filter = st.selectbox(
@@ -518,19 +839,7 @@ def main():
                     try:
                         reviews_data = load_review_data_for_rag(dashboard)
                         st.session_state.rag_system.load_reviews(reviews_data)
-                        # st.success(f"✅ Loaded {len(reviews_data)} reviews for AI analysis")
                         st.success(f"✅ Loaded")
-                        
-                        
-                        # Debug information
-                        # with st.expander("🔧 Debug: Review Loading Details"):
-                        #     st.write(f"**Total reviews loaded:** {len(reviews_data)}")
-                        #     if reviews_data:
-                        #         sample_review = reviews_data[0]
-                        #         st.write(f"**Sample review structure:** {list(sample_review.keys())}")
-                        #         st.write(f"**Sample review text:** {sample_review.get('text', '')[:100]}...")
-                        #     else:
-                        #         st.write("**No reviews loaded**")
                     except Exception as e:
                         st.warning(f"⚠️ Could not load review data: {e}")
                         st.session_state.rag_system.load_reviews([])  # Empty fallback
@@ -539,46 +848,32 @@ def main():
             # Chat interface
             st.markdown("**Ask me anything about products and customer sentiment!**")
             
-            # Example questions
-            st.markdown("**💡 Example questions to try:**")
-            example_questions = [
-                "What do customers say about product quality?",
-                "How do customers feel about the design?",
-                "What are the main complaints about this product?",
-                "What do customers love most about this product?",
-                "How does the battery life perform according to reviews?"
-            ]
+            # Initialize session state for questions
+            if 'quick_question_text' not in st.session_state:
+                st.session_state.quick_question_text = ''
             
+            # Example question buttons
+            st.markdown("**💡 Example questions to try:**")
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("🔍 Quality Analysis", help="Ask about product quality"):
                     st.session_state.quick_question_text = "What do customers say about product quality?"
-                    st.session_state.quick_question_clicked = True
                     st.rerun()
             with col2:
                 if st.button("💡 Design Feedback", help="Ask about design"):
                     st.session_state.quick_question_text = "How do customers feel about the design?"
-                    st.session_state.quick_question_clicked = True
                     st.rerun()
             
             # User input
             user_question = st.text_input(
                 "Ask your question:",
-                value=st.session_state.get('quick_question_text', ''),
+                value=st.session_state.quick_question_text,
                 placeholder="e.g., What do customers say about the battery life?",
                 key="user_question_input"
             )
             
-            # Don't clear session state here - let the text input handle it naturally
-            
             # Chat button
             if st.button("💬 Ask AI", type="primary", use_container_width=True):
-                # Debug: Show what we're working with
-                if 'quick_question_text' in st.session_state:
-                    st.write(f"🔧 Debug: quick_question_text = '{st.session_state.quick_question_text}'")
-                st.write(f"🔧 Debug: user_question = '{user_question}'")
-                st.write(f"🔧 Debug: user_question length = {len(user_question) if user_question else 0}")
-                
                 if user_question and user_question.strip():
                     with st.spinner("AI is thinking..."):
                         # Get response from RAG system
@@ -591,11 +886,8 @@ def main():
                             'timestamp': datetime.now().strftime("%H:%M:%S")
                         })
                         
-                        # Clear the input and flags after successful processing
-                        if 'quick_question_text' in st.session_state:
-                            del st.session_state.quick_question_text
-                        if 'quick_question_clicked' in st.session_state:
-                            del st.session_state.quick_question_clicked
+                        # Clear the quick question text after processing
+                        st.session_state.quick_question_text = ''
                         st.rerun()
                 else:
                     st.warning("Please enter a question!")
@@ -627,6 +919,7 @@ def main():
                 if st.button("🗑️ Clear Chat History"):
                     st.session_state.chat_history = []
                     st.rerun()
+
 
 
 def display_product_analysis(data, dashboard):
