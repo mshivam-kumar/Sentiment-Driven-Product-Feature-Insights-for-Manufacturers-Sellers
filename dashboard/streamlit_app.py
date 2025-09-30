@@ -977,6 +977,17 @@ def main():
                 except Exception:
                     num_reviews = 0
                 st.caption(f"RAG: reviews={num_reviews} | model=all-mpnet-base-v2 | top_k=10")
+                # Optional debug
+                with st.expander("🔧 RAG Debug", expanded=False):
+                    dbg = st.session_state.get('rag_debug', {})
+                    st.write({
+                        'branch': dbg.get('branch'),
+                        'loaded_reviews': dbg.get('loaded_reviews'),
+                        'expanded_error': dbg.get('expanded_error'),
+                        'RAG_REVIEWS_SOURCE': (RAG_REVIEWS_SOURCE[:80] + '...') if RAG_REVIEWS_SOURCE else '<empty>',
+                        'RAG_REVIEWS_MAX': RAG_REVIEWS_MAX,
+                        'API_BASE_URL': API_BASE_URL,
+                    })
 
             # Chat interface
             st.markdown("**Ask me anything about products and customer sentiment!**")
