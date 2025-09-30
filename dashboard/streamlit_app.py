@@ -79,60 +79,57 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def load_review_data_for_rag(dashboard):
-    """Load review data for RAG system."""
+    """Load review data for RAG system from AWS API."""
     try:
-        # Load from the expanded dataset for better coverage
         import json
+        import requests
         reviews = []
         
-        # Load from expanded beauty dataset
+        # Try to load from AWS API first
         try:
-            file_path = 'data_ingest/data_ingest/raw_review_All_Beauty_expanded.jsonl'
-            print(f"Looking for file: {file_path}")
-            print(f"Current directory: {os.getcwd()}")
-            print(f"File exists: {os.path.exists(file_path)}")
+            print("🌐 Loading review data from AWS API...")
             
-            if os.path.exists(file_path):
-                with open(file_path, 'r') as f:
-                    for line in f:
-                        if line.strip():
-                            review = json.loads(line.strip())
-                            # Convert to RAG format - use 'text' field from the actual data
-                            reviews.append({
-                                'text': review.get('text', ''),
-                                'sentiment_score': float(review.get('sentiment_score', 0.0)),
-                                'parent_asin': review.get('parent_asin', 'Unknown'),
-                                'rating': int(review.get('rating', 0))
-                            })
-                print(f"✅ Loaded {len(reviews)} reviews from expanded dataset")
+            # Get sample ASINs from the dashboard data
+            sample_asins = []
+            if hasattr(dashboard, 'data') and dashboard.data is not None and not dashboard.data.empty:
+                sample_asins = dashboard.data['parent_asin'].unique().tolist()[:10]  # Get first 10 ASINs
+            
+            # If no ASINs from dashboard, use some default ones
+            if not sample_asins:
+                sample_asins = ['B08JTNQFZY', 'B07PNNCSP9', 'B00YQ6X8EO', 'B081TJ8YS3', 'B09JS339BZ']
+            
+            print(f"📊 Fetching reviews for {len(sample_asins)} ASINs from AWS...")
+            
+            # Fetch reviews for each ASIN
+            for asin in sample_asins:
+                try:
+                    response = requests.get(f"{API_BASE_URL}/sentiment/{asin}", timeout=10)
+                    if response.status_code == 200:
+                        data = response.json()
+                        if 'reviews' in data:
+                            for review in data['reviews']:
+                                reviews.append({
+                                    'text': review.get('text', ''),
+                                    'sentiment_score': float(review.get('sentiment_score', 0.0)),
+                                    'parent_asin': review.get('parent_asin', asin),
+                                    'rating': int(review.get('rating', 0))
+                                })
+                except Exception as e:
+                    print(f"⚠️ Error fetching reviews for {asin}: {e}")
+                    continue
+            
+            if reviews:
+                print(f"✅ Loaded {len(reviews)} reviews from AWS API")
+                return reviews[:500]  # Limit to 500 for performance
             else:
-                print(f"❌ File not found: {file_path}, using sample data")
-                # Try alternative paths
-                alt_paths = [
-                    'raw_review_All_Beauty_expanded.jsonl',
-                    '../data_ingest/data_ingest/raw_review_All_Beauty_expanded.jsonl',
-                    './raw_review_All_Beauty_expanded.jsonl'
-                ]
-                for alt_path in alt_paths:
-                    if os.path.exists(alt_path):
-                        print(f"✅ Found alternative path: {alt_path}")
-                        with open(alt_path, 'r') as f:
-                            for line in f:
-                                if line.strip():
-                                    review = json.loads(line.strip())
-                                    reviews.append({
-                                        'text': review.get('text', ''),
-                                        'sentiment_score': float(review.get('sentiment_score', 0.0)),
-                                        'parent_asin': review.get('parent_asin', 'Unknown'),
-                                        'rating': int(review.get('rating', 0))
-                                    })
-                        print(f"✅ Loaded {len(reviews)} reviews from {alt_path}")
-                        break
+                print("⚠️ No reviews loaded from AWS API, falling back to sample data")
+                
         except Exception as e:
-            print(f"❌ Error loading expanded dataset: {e}, using sample data")
+            print(f"❌ Error loading from AWS API: {e}, using sample data")
         
-        # Add electronics-style reviews for better coverage
-        electronics_reviews = [
+        # Fallback to sample data if AWS API fails
+        print("📝 Using fallback sample data...")
+        sample_reviews = [
             {
                 'text': 'Excellent battery life, lasts all day with heavy use. Great build quality and design.',
                 'sentiment_score': 0.8,
@@ -140,83 +137,68 @@ def load_review_data_for_rag(dashboard):
                 'rating': 5
             },
             {
-                'text': 'Battery drains too fast, needs charging twice a day. Otherwise good product.',
-                'sentiment_score': -0.2,
-                'parent_asin': 'B08JTNQFZY',
-                'rating': 3
-            },
-            {
-                'text': 'Perfect size for my needs, not too big or small. Easy to use and setup.',
-                'sentiment_score': 0.7,
-                'parent_asin': 'B08JTNQFZY',
-                'rating': 4
-            },
-            {
-                'text': 'Design is beautiful but quality could be better. Feels cheap in some areas.',
-                'sentiment_score': 0.1,
-                'parent_asin': 'B08JTNQFZY',
-                'rating': 3
-            },
-            {
-                'text': 'Amazing value for money! Works exactly as described. Highly recommend.',
+                'text': 'The camera quality is amazing, especially in low light conditions. Very satisfied with this purchase.',
                 'sentiment_score': 0.9,
                 'parent_asin': 'B08JTNQFZY',
                 'rating': 5
             },
             {
-                'text': 'Great product, excellent quality and fast delivery!',
-                'sentiment_score': 0.8,
-                'parent_asin': 'B00YQ6X8EO',
+                'text': 'Good product overall but the battery drains faster than expected. Design is nice though.',
+                'sentiment_score': 0.6,
+                'parent_asin': 'B08JTNQFZY',
+                'rating': 4
+            },
+            {
+                'text': 'Poor quality, stopped working after just 2 weeks. Would not recommend.',
+                'sentiment_score': 0.1,
+                'parent_asin': 'B08JTNQFZY',
+                'rating': 1
+            },
+            {
+                'text': 'Average product, nothing special. Does what it needs to do but could be better.',
+                'sentiment_score': 0.5,
+                'parent_asin': 'B08JTNQFZY',
+                'rating': 3
+            },
+            {
+                'text': 'Amazing product! Exceeded all my expectations. Fast delivery and excellent customer service.',
+                'sentiment_score': 0.95,
+                'parent_asin': 'B07PNNCSP9',
                 'rating': 5
             },
             {
-                'text': 'Poor quality, broke after one week of use.',
-                'sentiment_score': -0.7,
-                'parent_asin': 'B00YQ6X8EO',
+                'text': 'The design is beautiful and the functionality is top-notch. Highly recommend!',
+                'sentiment_score': 0.85,
+                'parent_asin': 'B07PNNCSP9',
+                'rating': 5
+            },
+            {
+                'text': 'Good value for money. Works as described but could use some improvements.',
+                'sentiment_score': 0.7,
+                'parent_asin': 'B07PNNCSP9',
+                'rating': 4
+            },
+            {
+                'text': 'Not impressed with the quality. Feels cheap and broke easily.',
+                'sentiment_score': 0.2,
+                'parent_asin': 'B07PNNCSP9',
                 'rating': 2
             },
             {
-                'text': 'Amazing design and build quality. Highly recommended!',
+                'text': 'Perfect for my needs. Easy to use and reliable. Will buy again.',
                 'sentiment_score': 0.9,
-                'parent_asin': 'B00YQ6X8EO',
-                'rating': 5
-            },
-            {
-                'text': 'Good value for money, but could be better.',
-                'sentiment_score': 0.3,
-                'parent_asin': 'B081TJ8YS3',
-                'rating': 4
-            },
-            {
-                'text': 'Perfect for my needs. Great customer service too!',
-                'sentiment_score': 0.7,
-                'parent_asin': 'B08BZ63GMJ',
+                'parent_asin': 'B07PNNCSP9',
                 'rating': 5
             }
         ]
         
-        reviews.extend(electronics_reviews)
-        
-        # Return more reviews for better RAG performance
-        print(f"Total reviews loaded: {len(reviews)}")
-        return reviews[:500]  # Increased limit to 500 reviews for better coverage
+        print(f"✅ Loaded {len(sample_reviews)} sample reviews")
+        return sample_reviews
         
     except Exception as e:
-        print(f"Error loading review data: {e}")
-        # Fallback to basic sample data
+        print(f"❌ Error loading review data: {e}")
         return [
-            {
-                'text': 'Great product, excellent quality and fast delivery!',
-                'sentiment_score': 0.8,
-                'parent_asin': 'B08JTNQFZY',
-                'rating': 5
-            },
-            {
-                'text': 'Poor quality, broke after one week of use.',
-                'sentiment_score': -0.7,
-                'parent_asin': 'B08JTNQFZY',
-                'rating': 2
-            }
+            {'text': 'Great product, excellent quality and fast delivery!', 'sentiment_score': 0.8, 'parent_asin': 'B08JTNQFZY', 'rating': 5}
         ]
 
 
