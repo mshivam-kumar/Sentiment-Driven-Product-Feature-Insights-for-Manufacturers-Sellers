@@ -44,6 +44,20 @@ API_BASE_URL = os.getenv('API_BASE_URL', 'https://f3157r5ca4.execute-api.us-east
 # Optional: load expanded reviews from S3/JSONL for RAG
 RAG_REVIEWS_SOURCE = os.getenv('RAG_REVIEWS_SOURCE', '')  # e.g., s3://bucket/path/All_Beauty_expanded.jsonl or /path/to/local.jsonl
 RAG_REVIEWS_MAX = int(os.getenv('RAG_REVIEWS_MAX', '5000'))
+
+# Fallback to Streamlit secrets if env vars are not set (for Streamlit Cloud)
+try:
+    if not RAG_REVIEWS_SOURCE and 'RAG_REVIEWS_SOURCE' in st.secrets:
+        RAG_REVIEWS_SOURCE = st.secrets['RAG_REVIEWS_SOURCE']
+    if 'RAG_REVIEWS_MAX' in st.secrets:
+        try:
+            RAG_REVIEWS_MAX = int(st.secrets['RAG_REVIEWS_MAX'])
+        except Exception:
+            pass
+    if 'API_BASE_URL' in st.secrets and (not API_BASE_URL or 'execute-api' not in API_BASE_URL):
+        API_BASE_URL = st.secrets['API_BASE_URL']
+except Exception:
+    pass
 DEFAULT_ASIN = 'B08JTNQFZY'
 
 # Page configuration
@@ -145,20 +159,18 @@ def load_review_data_for_rag(dashboard):
             
             print(f"📊 Fetching reviews for {len(sample_asins)} ASINs from AWS...")
             
-            # Fetch reviews for each ASIN
+            # Fetch reviews for each ASIN (use product endpoint with large window)
             for asin in sample_asins:
                 try:
-                    response = requests.get(f"{API_BASE_URL}/sentiment/{asin}", timeout=10)
+                    response = requests.get(
+                        f"{API_BASE_URL}/sentiment/product/{asin}",
+                        params={"window": "10000d"},
+                        timeout=10
+                    )
                     if response.status_code == 200:
                         data = response.json()
-                        if 'reviews' in data:
-                            for review in data['reviews']:
-                                reviews.append({
-                                    'text': review.get('text', ''),
-                                    'sentiment_score': float(review.get('sentiment_score', 0.0)),
-                                    'parent_asin': review.get('parent_asin', asin),
-                                    'rating': int(review.get('rating', 0))
-                                })
+                        # API returns aggregates; not raw reviews. We can't extract reviews reliably.
+                        # Leave reviews empty to fall back to sample unless RAG_REVIEWS_SOURCE is set.
                 except Exception as e:
                     print(f"⚠️ Error fetching reviews for {asin}: {e}")
                     continue
