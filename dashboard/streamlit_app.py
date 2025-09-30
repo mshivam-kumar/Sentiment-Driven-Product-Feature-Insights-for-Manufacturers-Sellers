@@ -711,15 +711,14 @@ def main():
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            # Initialize session state for ASIN
-            if 'asin_input_value' not in st.session_state:
-                st.session_state.asin_input_value = DEFAULT_ASIN
+            # Initialize session state for ASIN using the widget key
+            if 'asin_input' not in st.session_state:
+                st.session_state.asin_input = DEFAULT_ASIN
             
             # ASIN input with examples
             st.markdown("**Enter Product ASIN:**")
             asin = st.text_input(
                 "Product ASIN",
-                value=st.session_state.asin_input_value,
                 help="Enter the Amazon Standard Identification Number",
                 key="asin_input"
             )
@@ -730,7 +729,7 @@ def main():
             for i, (asin_example, description) in enumerate(example_asins.items()):
                 with example_cols[i % 3]:
                     if st.button(f"📱 {asin_example}", help=description, key=f"example_{asin_example}"):
-                        st.session_state.asin_input_value = asin_example
+                        st.session_state.asin_input = asin_example
                         st.rerun()
         
         with col2:
@@ -765,15 +764,14 @@ def main():
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            # Initialize session state for search
-            if 'search_input_value' not in st.session_state:
-                st.session_state.search_input_value = 'quality'
+            # Initialize session state for search using the widget key
+            if 'search_input' not in st.session_state:
+                st.session_state.search_input = 'quality'
             
             # Search input with examples
             st.markdown("**Search for a Feature:**")
             search_query = st.text_input(
                 "Search Query",
-                value=st.session_state.search_input_value,
                 help="Search for features across products",
                 key="search_input"
             )
@@ -784,7 +782,7 @@ def main():
             for i, feature_example in enumerate(example_features):
                 with example_cols[i % 4]:
                     if st.button(f"🔍 {feature_example}", help=f"Search for {feature_example}", key=f"feature_{feature_example}"):
-                        st.session_state.search_input_value = feature_example
+                        st.session_state.search_input = feature_example
                         st.rerun()
         
         with col2:
@@ -849,25 +847,24 @@ def main():
             st.markdown("**Ask me anything about products and customer sentiment!**")
             
             # Initialize session state for questions
-            if 'quick_question_text' not in st.session_state:
-                st.session_state.quick_question_text = ''
+            if 'user_question_input' not in st.session_state:
+                st.session_state.user_question_input = ''
             
             # Example question buttons
             st.markdown("**💡 Example questions to try:**")
             col1, col2 = st.columns(2)
             with col1:
                 if st.button("🔍 Quality Analysis", help="Ask about product quality"):
-                    st.session_state.quick_question_text = "What do customers say about product quality?"
+                    st.session_state.user_question_input = "What do customers say about product quality?"
                     st.rerun()
             with col2:
                 if st.button("💡 Design Feedback", help="Ask about design"):
-                    st.session_state.quick_question_text = "How do customers feel about the design?"
+                    st.session_state.user_question_input = "How do customers feel about the design?"
                     st.rerun()
             
             # User input
             user_question = st.text_input(
                 "Ask your question:",
-                value=st.session_state.quick_question_text,
                 placeholder="e.g., What do customers say about the battery life?",
                 key="user_question_input"
             )
@@ -886,8 +883,8 @@ def main():
                             'timestamp': datetime.now().strftime("%H:%M:%S")
                         })
                         
-                        # Clear the quick question text after processing
-                        st.session_state.quick_question_text = ''
+                        # Clear the input after processing
+                        st.session_state.user_question_input = ''
                         st.rerun()
                 else:
                     st.warning("Please enter a question!")
@@ -919,7 +916,6 @@ def main():
                 if st.button("🗑️ Clear Chat History"):
                     st.session_state.chat_history = []
                     st.rerun()
-
 
 
 def display_product_analysis(data, dashboard):
