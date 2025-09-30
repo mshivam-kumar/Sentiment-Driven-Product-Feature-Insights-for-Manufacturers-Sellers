@@ -3,6 +3,8 @@
 .env.local
 .env.*.local
 
+.rag_cache
+
 # Python
 __pycache__/
 *.py[cod]

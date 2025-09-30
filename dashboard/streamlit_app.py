@@ -102,6 +102,11 @@ def load_review_data_for_rag(dashboard):
         import requests
         import s3fs
         reviews = []
+        st.session_state.setdefault('rag_debug', {})
+        dbg = st.session_state.rag_debug
+        dbg.clear()
+        dbg['RAG_REVIEWS_SOURCE'] = RAG_REVIEWS_SOURCE or '<empty>'
+        dbg['RAG_REVIEWS_MAX'] = RAG_REVIEWS_MAX
         # 1) If RAG_REVIEWS_SOURCE is set, try to load expanded corpus
         if RAG_REVIEWS_SOURCE:
             try:
@@ -116,6 +121,25 @@ def load_review_data_for_rag(dashboard):
                             try:
                                 obj = json.loads(line)
                                 records.append(obj)
+                            except Exception:
+                                continue
+                elif RAG_REVIEWS_SOURCE.startswith('http://') or RAG_REVIEWS_SOURCE.startswith('https://'):
+                    # Support presigned/public HTTP URLs
+                    with requests.get(RAG_REVIEWS_SOURCE, stream=True, timeout=30) as r:
+                        r.raise_for_status()
+                        i = 0
+                        for raw in r.iter_lines(decode_unicode=True):
+                            if raw is None:
+                                continue
+                            if i >= RAG_REVIEWS_MAX:
+                                break
+                            line = raw.strip()
+                            if not line:
+                                continue
+                            try:
+                                obj = json.loads(line)
+                                records.append(obj)
+                                i += 1
                             except Exception:
                                 continue
                 else:
@@ -140,9 +164,12 @@ def load_review_data_for_rag(dashboard):
                         })
                 if reviews:
                     print(f"✅ Loaded {len(reviews)} reviews from expanded source")
+                    dbg['branch'] = 'expanded_source'
+                    dbg['loaded_reviews'] = len(reviews)
                     return reviews[:RAG_REVIEWS_MAX]
             except Exception as e:
                 print(f"⚠️ Failed to load expanded reviews: {e}. Falling back to API")
+                dbg['expanded_error'] = str(e)
         
         # Try to load from AWS API first
         try:
@@ -173,10 +200,13 @@ def load_review_data_for_rag(dashboard):
                         # Leave reviews empty to fall back to sample unless RAG_REVIEWS_SOURCE is set.
                 except Exception as e:
                     print(f"⚠️ Error fetching reviews for {asin}: {e}")
+                    dbg.setdefault('api_errors', []).append({asin: str(e)})
                     continue
             
             if reviews:
                 print(f"✅ Loaded {len(reviews)} reviews from AWS API")
+                dbg['branch'] = 'api_reviews'
+                dbg['loaded_reviews'] = len(reviews)
                 return reviews[:min(len(reviews), RAG_REVIEWS_MAX)]
             else:
                 print("⚠️ No reviews loaded from AWS API, falling back to sample data")
@@ -250,6 +280,8 @@ def load_review_data_for_rag(dashboard):
         ]
         
         print(f"✅ Loaded {len(sample_reviews)} sample reviews")
+        dbg['branch'] = 'sample_fallback'
+        dbg['loaded_reviews'] = len(sample_reviews)
         return sample_reviews
         
     except Exception as e:
