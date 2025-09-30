@@ -451,7 +451,6 @@ def main():
                 with example_cols[i % 4]:
                     if st.button(f"🔍 {feature_example}", help=f"Search for {feature_example}", key=f"feature_{feature_example}"):
                         # Use a different approach to update the input
-                        # st.session_state[f"select_feature_{feature_example}"] = True
                         st.session_state.search_input_value = feature_example  # Update the value
                         st.rerun()
             
