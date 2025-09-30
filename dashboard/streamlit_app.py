@@ -88,6 +88,10 @@ def load_review_data_for_rag(dashboard):
         # Load from expanded beauty dataset
         try:
             file_path = 'data_ingest/data_ingest/raw_review_All_Beauty_expanded.jsonl'
+            print(f"Looking for file: {file_path}")
+            print(f"Current directory: {os.getcwd()}")
+            print(f"File exists: {os.path.exists(file_path)}")
+            
             if os.path.exists(file_path):
                 with open(file_path, 'r') as f:
                     for line in f:
@@ -100,11 +104,32 @@ def load_review_data_for_rag(dashboard):
                                 'parent_asin': review.get('parent_asin', 'Unknown'),
                                 'rating': int(review.get('rating', 0))
                             })
-                print(f"Loaded {len(reviews)} reviews from expanded dataset")
+                print(f"✅ Loaded {len(reviews)} reviews from expanded dataset")
             else:
-                print(f"File not found: {file_path}, using sample data")
+                print(f"❌ File not found: {file_path}, using sample data")
+                # Try alternative paths
+                alt_paths = [
+                    'raw_review_All_Beauty_expanded.jsonl',
+                    '../data_ingest/data_ingest/raw_review_All_Beauty_expanded.jsonl',
+                    './raw_review_All_Beauty_expanded.jsonl'
+                ]
+                for alt_path in alt_paths:
+                    if os.path.exists(alt_path):
+                        print(f"✅ Found alternative path: {alt_path}")
+                        with open(alt_path, 'r') as f:
+                            for line in f:
+                                if line.strip():
+                                    review = json.loads(line.strip())
+                                    reviews.append({
+                                        'text': review.get('review_text', ''),
+                                        'sentiment_score': float(review.get('sentiment_score', 0.0)),
+                                        'parent_asin': review.get('parent_asin', 'Unknown'),
+                                        'rating': int(review.get('rating', 0))
+                                    })
+                        print(f"✅ Loaded {len(reviews)} reviews from {alt_path}")
+                        break
         except Exception as e:
-            print(f"Error loading expanded dataset: {e}, using sample data")
+            print(f"❌ Error loading expanded dataset: {e}, using sample data")
         
         # Add electronics-style reviews for better coverage
         electronics_reviews = [
@@ -511,6 +536,16 @@ def main():
                         reviews_data = load_review_data_for_rag(dashboard)
                         st.session_state.rag_system.load_reviews(reviews_data)
                         st.success(f"✅ Loaded {len(reviews_data)} reviews for AI analysis")
+                        
+                        # Debug information
+                        with st.expander("🔧 Debug: Review Loading Details"):
+                            st.write(f"**Total reviews loaded:** {len(reviews_data)}")
+                            if reviews_data:
+                                sample_review = reviews_data[0]
+                                st.write(f"**Sample review structure:** {list(sample_review.keys())}")
+                                st.write(f"**Sample review text:** {sample_review.get('text', '')[:100]}...")
+                            else:
+                                st.write("**No reviews loaded**")
                     except Exception as e:
                         st.warning(f"⚠️ Could not load review data: {e}")
                         st.session_state.rag_system.load_reviews([])  # Empty fallback
@@ -547,8 +582,8 @@ def main():
                 key="chat_input"
             )
             
-            # Clear quick_question from session state after it's used
-            if 'quick_question' in st.session_state:
+            # Clear quick_question from session state after it's used (but only if it matches the current input)
+            if 'quick_question' in st.session_state and st.session_state.quick_question == user_question:
                 del st.session_state.quick_question
             
             # Chat button
