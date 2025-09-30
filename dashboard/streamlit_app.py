@@ -973,10 +973,7 @@ def main():
                         if (not cache_hit) or force_reload:
                             reviews_data = load_review_data_for_rag(dashboard)
                             st.session_state.rag_system.load_reviews(reviews_data)
-                            st.session_state.rag_system.save_index(cache_dir, meta={
-                                'source': 'RAG_REVIEWS_SOURCE' if RAG_REVIEWS_SOURCE else 'API/sample',
-                                'RAG_REVIEWS_SOURCE': RAG_REVIEWS_SOURCE,
-                            })
+                            st.session_state.rag_system.save_index(cache_dir)
                         st.success(f"✅ Loaded")
                     except Exception as e:
                         st.warning(f"⚠️ Could not load review data: {e}")
