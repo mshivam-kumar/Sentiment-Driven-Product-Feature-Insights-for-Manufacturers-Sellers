@@ -194,10 +194,11 @@ def main():
     # Example ASINs and Features
     example_asins = {
         "B08JTNQFZY": "Hair Styling Product (Multiple Features)",
-        "B097YYB2GV": "Beauty Tool (Build Quality Focus)",
-        "B015ZXMSFQ": "Skincare Product (Material & Value)",
-        "B088838886": "Hair Accessory (Design & Quality)",
-        "B07FX94GYX": "Skincare Tool (Performance Focus)"
+        "B097YYB2GV": "Beauty Tool (Build Quality Focus)", 
+        "B00YQ6X8EO": "Beauty Product (Quality & Design)",
+        "B081TJ8YS3": "Beauty Accessory (Performance Focus)",
+        "B08BZ63GMJ": "Beauty Tool (Value & Material)",
+        "B00R8DXL44": "Beauty Product (Style & Comfort)"
     }
     
     example_features = [
