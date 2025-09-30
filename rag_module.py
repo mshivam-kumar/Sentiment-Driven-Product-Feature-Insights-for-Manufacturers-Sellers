@@ -82,7 +82,7 @@ class RAGSystem:
         else:
             print("⚠️ No valid review texts found")
 
-    def save_index(self, cache_dir: str) -> bool:
+    def save_index(self, cache_dir: str, meta: Optional[Dict[str, Any]] = None) -> bool:
         """Persist embeddings and minimal metadata for fast reloads.
         Files:
           - embeddings.npy
@@ -108,6 +108,17 @@ class RAGSystem:
                 })
             with open(os.path.join(cache_dir, "reviews_meta.json"), 'w') as f:
                 json.dump(meta, f)
+            # Optional meta (e.g., source, model, count)
+            if meta is None:
+                meta_info = {}
+            else:
+                meta_info = dict(meta)
+            meta_info.update({
+                'model_name': self.model_name,
+                'num_reviews': len(self.reviews_data),
+            })
+            with open(os.path.join(cache_dir, "index_meta.json"), 'w') as f:
+                json.dump(meta_info, f)
             print(f"💾 Cached embeddings to {cache_dir}")
             return True
         except Exception as e:
@@ -122,6 +133,7 @@ class RAGSystem:
             import numpy as np
             emb_path = os.path.join(cache_dir, "embeddings.npy")
             meta_path = os.path.join(cache_dir, "reviews_meta.json")
+            info_path = os.path.join(cache_dir, "index_meta.json")
             if not (os.path.exists(emb_path) and os.path.exists(meta_path)):
                 return False
             self.review_embeddings = np.load(emb_path)
@@ -129,6 +141,12 @@ class RAGSystem:
                 meta = json.load(f)
             self.reviews_data = meta
             self._cache_loaded = True
+            # Load optional info
+            try:
+                with open(info_path, 'r') as f:
+                    self._index_meta = json.load(f)
+            except Exception:
+                self._index_meta = {}
             print(f"⚡ Loaded cached embeddings from {cache_dir} ({len(self.reviews_data)} reviews)")
             return True
         except Exception as e:

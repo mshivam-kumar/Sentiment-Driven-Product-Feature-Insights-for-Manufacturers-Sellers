@@ -956,14 +956,27 @@ def main():
                 with st.spinner("Initializing AI assistant..."):
                     st.session_state.rag_system = RAGSystem()
                     # Try load cached index first
-                    cache_dir = os.path.join(os.path.dirname(__file__), '.rag_cache')
+                    import hashlib
+                    source_key = RAG_REVIEWS_SOURCE or 'sample'
+                    cache_hash = hashlib.sha1(source_key.encode('utf-8')).hexdigest()[:12]
+                    cache_dir = os.path.join(os.path.dirname(__file__), '.rag_cache', cache_hash)
                     cache_hit = st.session_state.rag_system.load_index(cache_dir)
                     # Load real review data from API
                     try:
-                        if not cache_hit:
+                        force_reload = False
+                        # If cache exists but is tiny and we have a real source, rebuild
+                        try:
+                            if cache_hit and RAG_REVIEWS_SOURCE and len(st.session_state.rag_system.reviews_data) < 100:
+                                force_reload = True
+                        except Exception:
+                            pass
+                        if (not cache_hit) or force_reload:
                             reviews_data = load_review_data_for_rag(dashboard)
                             st.session_state.rag_system.load_reviews(reviews_data)
-                            st.session_state.rag_system.save_index(cache_dir)
+                            st.session_state.rag_system.save_index(cache_dir, meta={
+                                'source': 'RAG_REVIEWS_SOURCE' if RAG_REVIEWS_SOURCE else 'API/sample',
+                                'RAG_REVIEWS_SOURCE': RAG_REVIEWS_SOURCE,
+                            })
                         st.success(f"✅ Loaded")
                     except Exception as e:
                         st.warning(f"⚠️ Could not load review data: {e}")
