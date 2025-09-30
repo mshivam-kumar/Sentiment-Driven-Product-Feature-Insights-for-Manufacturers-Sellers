@@ -45,7 +45,7 @@ DEFAULT_ASIN = 'B08JTNQFZY'
 
 # Page configuration
 st.set_page_config(
-    page_title="SellerIQ - A Smart Product Analytics For Sellers",
+    page_title="SellerIQ — AI-Powered Smart Product Analytics for Sellers",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -283,7 +283,7 @@ class SentimentDashboard:
 #     dashboard = SentimentDashboard()
     
 #     # Header with prominent branding
-#     st.markdown('<h1 class="main-header">📊 SellerIQ - A Smart Product Analytics For Sellers</h1>', 
+#     st.markdown('<h1 class="main-header">📊 SellerIQ — AI-Powered Smart Product Analytics for Sellers</h1>', 
 #                 unsafe_allow_html=True)
     
 #     # Prominent branding
@@ -300,7 +300,7 @@ class SentimentDashboard:
 #     # Information section
 #     with st.expander("ℹ️ How to Use This App", expanded=False):
 #         st.markdown("""
-#         **Welcome to SellerIQ - A Smart Product Analytics For Sellers!**
+#         **Welcome to SellerIQ — AI-Powered Smart Product Analytics for Sellers!**
         
 #         This app helps manufacturers and sellers understand customer sentiment about specific product features.
         
@@ -635,9 +635,32 @@ def main():
     dashboard = SentimentDashboard()
     
     # Header with prominent branding
-    st.markdown('<h1 class="main-header">📊 SellerIQ - A Smart Product Analytics For Sellers</h1>', 
-                unsafe_allow_html=True)
+    # st.markdown('<h1 class="main-header">📊 SellerIQ <br> An AI-Powered Smart Product Analytics for Sellers</h1>', 
+    #             unsafe_allow_html=True)
     
+    st.markdown('''
+    <style>
+    .main-header {
+        margin: 0;
+        padding: 0;
+        line-height: 1.0; /* tight line height */
+        text-align: center;
+    }
+    .subtext {
+        font-size: 0.5em;
+        display: inline-block; /* keeps it inline but allows styling */
+        margin: 0;
+        padding-left: 0.3em; /* slight space if needed */
+        vertical-align: bottom; /* align baseline closely */
+    }
+    </style>
+    <h1 class="main-header">
+    📊 SellerIQ
+    <span class="subtext">An AI-Powered Smart Product Analytics for Sellers</span>
+    </h1>
+    ''', unsafe_allow_html=True)
+
+
     # Prominent branding
     st.markdown(
         """
@@ -652,7 +675,7 @@ def main():
     # Information section
     with st.expander("ℹ️ How to Use This App", expanded=False):
         st.markdown("""
-        **Welcome to SellerIQ - A Smart Product Analytics For Sellers!**
+        **Welcome to SellerIQ — AI-Powered Smart Product Analytics for Sellers!**
         
         This app helps manufacturers and sellers understand customer sentiment about specific product features.
         
@@ -1135,7 +1158,7 @@ def display_search_results(results, dashboard):
     st.markdown(
         """
         <div style='text-align: center; color: #666;'>
-            <p>📊 SellerIQ - A Smart Product Analytics For Sellers | Powered by AWS & Streamlit</p>
+            <p>📊 SellerIQ — AI-Powered Smart Product Analytics for Sellers | Powered by AWS & Streamlit</p>
             <p>Built with ❤️ for manufacturers and sellers</p>
         </div>
         """,
