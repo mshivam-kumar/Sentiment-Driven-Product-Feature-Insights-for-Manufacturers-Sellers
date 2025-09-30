@@ -87,19 +87,24 @@ def load_review_data_for_rag(dashboard):
         
         # Load from expanded beauty dataset
         try:
-            with open('data_ingest/data_ingest/raw_review_All_Beauty_expanded.jsonl', 'r') as f:
-                for line in f:
-                    if line.strip():
-                        review = json.loads(line.strip())
-                        # Convert to RAG format
-                        reviews.append({
-                            'text': review.get('review_text', ''),
-                            'sentiment_score': float(review.get('sentiment_score', 0.0)),
-                            'parent_asin': review.get('parent_asin', 'Unknown'),
-                            'rating': int(review.get('rating', 0))
-                        })
-        except FileNotFoundError:
-            print("Expanded dataset not found, using sample data")
+            file_path = 'data_ingest/data_ingest/raw_review_All_Beauty_expanded.jsonl'
+            if os.path.exists(file_path):
+                with open(file_path, 'r') as f:
+                    for line in f:
+                        if line.strip():
+                            review = json.loads(line.strip())
+                            # Convert to RAG format
+                            reviews.append({
+                                'text': review.get('review_text', ''),
+                                'sentiment_score': float(review.get('sentiment_score', 0.0)),
+                                'parent_asin': review.get('parent_asin', 'Unknown'),
+                                'rating': int(review.get('rating', 0))
+                            })
+                print(f"Loaded {len(reviews)} reviews from expanded dataset")
+            else:
+                print(f"File not found: {file_path}, using sample data")
+        except Exception as e:
+            print(f"Error loading expanded dataset: {e}, using sample data")
         
         # Add electronics-style reviews for better coverage
         electronics_reviews = [
@@ -166,7 +171,10 @@ def load_review_data_for_rag(dashboard):
         ]
         
         reviews.extend(electronics_reviews)
-        return reviews[:150]  # Limit to 150 reviews for performance
+        
+        # Return more reviews for better RAG performance
+        print(f"Total reviews loaded: {len(reviews)}")
+        return reviews[:500]  # Increased limit to 500 reviews for better coverage
         
     except Exception as e:
         print(f"Error loading review data: {e}")
@@ -534,14 +542,13 @@ def main():
             # User input
             user_question = st.text_input(
                 "Ask your question:",
-                value="",
+                value=st.session_state.get('quick_question', ''),
                 placeholder="e.g., What do customers say about the battery life?",
                 key="chat_input"
             )
             
-            # Handle quick question buttons
+            # Clear quick_question from session state after it's used
             if 'quick_question' in st.session_state:
-                user_question = st.session_state.quick_question
                 del st.session_state.quick_question
             
             # Chat button
