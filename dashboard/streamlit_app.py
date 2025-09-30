@@ -375,7 +375,7 @@ def main():
             st.markdown("**Enter Product ASIN:**")
             asin = st.text_input(
                 "Product ASIN",
-                value=DEFAULT_ASIN,
+                value=st.session_state.get('asin_input_value', DEFAULT_ASIN),
                 help="Enter the Amazon Standard Identification Number",
                 key="asin_input"
             )
@@ -387,7 +387,8 @@ def main():
                 with example_cols[i % 3]:
                     if st.button(f"📱 {asin_example}", help=description, key=f"example_{asin_example}"):
                         # Use a different approach to update the input
-                        st.session_state[f"select_asin_{asin_example}"] = True
+                        # st.session_state[f"select_asin_{asin_example}"] = True
+                        st.session_state.asin_input_value = asin_example
                         st.rerun()
             
             # Handle ASIN selection from buttons
@@ -400,7 +401,7 @@ def main():
             
             # Update ASIN input if a button was clicked
             if selected_asin_from_button:
-                asin = selected_asin_from_button
+                st.session_state.asin_input_value = selected_asin_from_button
         
         with col2:
             feature_filter = st.text_input(
@@ -438,7 +439,7 @@ def main():
             st.markdown("**Search for a Feature:**")
             search_query = st.text_input(
                 "Search Query",
-                value="quality",
+                value=st.session_state.get('search_input_value', 'quality'),
                 help="Search for features across products",
                 key="search_input"
             )
@@ -450,7 +451,8 @@ def main():
                 with example_cols[i % 4]:
                     if st.button(f"🔍 {feature_example}", help=f"Search for {feature_example}", key=f"feature_{feature_example}"):
                         # Use a different approach to update the input
-                        st.session_state[f"select_feature_{feature_example}"] = True
+                        # st.session_state[f"select_feature_{feature_example}"] = True
+                        st.session_state.search_input_value = feature_example  # Update the value
                         st.rerun()
             
             # Handle feature selection from buttons
@@ -463,7 +465,7 @@ def main():
             
             # Update search input if a button was clicked
             if selected_feature_from_button:
-                search_query = selected_feature_from_button
+                st.session_state.search_input_value = selected_feature_from_button
         
         with col2:
             category_filter = st.selectbox(
