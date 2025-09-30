@@ -1,4 +1,4 @@
-# **📊 SellerIQ** — An AI-Powered Smart Product Analytics for Sellers
+![SellerIQ Header](docs/project_name_logo.png)
 
 This project implements an end-to-end ML pipeline for extracting sentiment-driven product feature insights from Amazon reviews using the McAuley-Lab/Amazon-Reviews-2023 dataset.
 
