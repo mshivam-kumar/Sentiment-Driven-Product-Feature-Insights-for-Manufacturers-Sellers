@@ -41,6 +41,9 @@ load_dotenv()
 
 # Configuration
 API_BASE_URL = os.getenv('API_BASE_URL', 'https://f3157r5ca4.execute-api.us-east-1.amazonaws.com/dev')
+# Optional: load expanded reviews from S3/JSONL for RAG
+RAG_REVIEWS_SOURCE = os.getenv('RAG_REVIEWS_SOURCE', '')  # e.g., s3://bucket/path/All_Beauty_expanded.jsonl or /path/to/local.jsonl
+RAG_REVIEWS_MAX = int(os.getenv('RAG_REVIEWS_MAX', '5000'))
 DEFAULT_ASIN = 'B08JTNQFZY'
 
 # Page configuration
@@ -83,7 +86,49 @@ def load_review_data_for_rag(dashboard):
     try:
         import json
         import requests
+        import s3fs
         reviews = []
+        # 1) If RAG_REVIEWS_SOURCE is set, try to load expanded corpus
+        if RAG_REVIEWS_SOURCE:
+            try:
+                print(f"📦 Loading expanded reviews from {RAG_REVIEWS_SOURCE} ...")
+                records = []
+                if RAG_REVIEWS_SOURCE.startswith('s3://'):
+                    fs = s3fs.S3FileSystem()
+                    with fs.open(RAG_REVIEWS_SOURCE, 'r') as f:
+                        for i, line in enumerate(f):
+                            if i >= RAG_REVIEWS_MAX:
+                                break
+                            try:
+                                obj = json.loads(line)
+                                records.append(obj)
+                            except Exception:
+                                continue
+                else:
+                    with open(RAG_REVIEWS_SOURCE, 'r') as f:
+                        for i, line in enumerate(f):
+                            if i >= RAG_REVIEWS_MAX:
+                                break
+                            try:
+                                obj = json.loads(line)
+                                records.append(obj)
+                            except Exception:
+                                continue
+                # Normalize
+                for r in records:
+                    text = r.get('text') or r.get('review_text') or ''
+                    if text:
+                        reviews.append({
+                            'text': text,
+                            'sentiment_score': float(r.get('sentiment_score', 0.0)),
+                            'parent_asin': r.get('parent_asin') or r.get('asin') or '',
+                            'rating': int(r.get('rating', 0))
+                        })
+                if reviews:
+                    print(f"✅ Loaded {len(reviews)} reviews from expanded source")
+                    return reviews[:RAG_REVIEWS_MAX]
+            except Exception as e:
+                print(f"⚠️ Failed to load expanded reviews: {e}. Falling back to API")
         
         # Try to load from AWS API first
         try:
@@ -120,7 +165,7 @@ def load_review_data_for_rag(dashboard):
             
             if reviews:
                 print(f"✅ Loaded {len(reviews)} reviews from AWS API")
-                return reviews[:500]  # Limit to 500 for performance
+                return reviews[:min(len(reviews), RAG_REVIEWS_MAX)]
             else:
                 print("⚠️ No reviews loaded from AWS API, falling back to sample data")
                 

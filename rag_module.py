@@ -41,7 +41,7 @@ class RAGSystem:
     2. Generating contextual insights about products/features
     """
     
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
+    def __init__(self, model_name: str = "sentence-transformers/all-mpnet-base-v2"):
         """Initialize the RAG system."""
         self.model_name = model_name
         self.embeddings_model = None
@@ -74,12 +74,12 @@ class RAGSystem:
         
         if review_texts:
             print(f"📊 Embedding {len(review_texts)} reviews...")
-            self.review_embeddings = self.embeddings_model.encode(review_texts)
+            self.review_embeddings = self.embeddings_model.encode(review_texts, normalize_embeddings=True, show_progress_bar=True)
             print("✅ Reviews embedded successfully")
         else:
             print("⚠️ No valid review texts found")
     
-    def search_relevant_reviews(self, query: str, top_k: int = 5) -> List[ReviewContext]:
+    def search_relevant_reviews(self, query: str, top_k: int = 10) -> List[ReviewContext]:
         """
         Search for reviews relevant to the query.
         
@@ -94,7 +94,7 @@ class RAGSystem:
             return self._simple_text_search(query, top_k)
         
         # Encode the query
-        query_embedding = self.embeddings_model.encode([query])
+        query_embedding = self.embeddings_model.encode([query], normalize_embeddings=True)
         
         # Calculate similarities
         similarities = cosine_similarity(query_embedding, self.review_embeddings)[0]
