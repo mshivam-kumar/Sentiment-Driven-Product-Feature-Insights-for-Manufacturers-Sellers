@@ -75,8 +75,6 @@ SellerIQ is an advanced AI-powered product analytics platform that helps manufac
 | **Response Relevance** | 85% improvement | Pre-trained TinyLlama (human evaluation) |
 | **System Reliability** | 99.8% success rate | 1000 requests tracked |
 | **Parameter Efficiency** | 0.1% trainable | LoRA vs full fine-tuning (1.1M vs 1.1B params) |
-| **Training Time** | 1.2 hours | LoRA fine-tuning on single GPU |
-| **Memory Usage** | 4GB GPU | LoRA vs 8GB+ for full fine-tuning |
 | **Domain Accuracy** | 92% sentiment classification | Human evaluation on test set |
 
 ## 🔬 Evaluation Metrics
