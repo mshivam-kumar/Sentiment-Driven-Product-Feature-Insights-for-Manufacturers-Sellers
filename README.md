@@ -93,9 +93,6 @@ SellerIQ is an advanced AI-powered product analytics platform that helps manufac
 - **BLEU Score**: 0.45
 - **ROUGE-L Score**: 0.52
 
-### **Hardware Specifications:**
-- **Training Machine**: NVIDIA RTX 3080 (10GB VRAM), 32GB RAM
-- **Training Data**: 500 reviews → 2,500 training examples
 
 ## 🛠️ Technology Stack
 

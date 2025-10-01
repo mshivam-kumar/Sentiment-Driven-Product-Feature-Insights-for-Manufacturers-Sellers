@@ -39,47 +39,26 @@ class TrainingDataPreparer:
         return training_examples
     
     def _create_examples_for_review(self, text: str, sentiment: float, rating: int, asin: str) -> List[Dict[str, str]]:
-        """Create multiple training examples for a single review."""
+        """Create training examples for a single review."""
         examples = []
         
         # Clean and truncate text
         clean_text = text.strip()[:300]  # Limit length
-        
-        # Example 1: Sentiment Analysis
         sentiment_label = self._get_sentiment_label(sentiment)
+        
+        # Create 1-2 examples per review (more realistic)
+        # Example 1: Sentiment Analysis
         examples.append({
-            "text": f"<|user|>\nAnalyze the sentiment of this product review: {clean_text}\n<|assistant|>\nThis review shows a {sentiment_label} sentiment with a score of {sentiment:.2f}. The customer rated the product {rating}/5 stars."
+            "text": f"<|user|>\nAnalyze this product review: {clean_text}\n<|assistant|>\nThis review shows {sentiment_label} sentiment ({sentiment:.2f}) with a {rating}/5 star rating."
         })
         
-        # Example 2: Quality Assessment
-        if 'quality' in text.lower() or 'good' in text.lower() or 'bad' in text.lower():
-            quality_sentiment = "positive" if sentiment > 0.1 else "negative" if sentiment < -0.1 else "neutral"
-            examples.append({
-                "text": f"<|user|>\nWhat does this customer say about product quality: {clean_text}\n<|assistant|>\nThe customer's feedback on quality is {quality_sentiment}. They rated it {rating}/5 stars and the sentiment score is {sentiment:.2f}."
-            })
-        
-        # Example 3: Recommendation
-        if rating >= 4:
-            examples.append({
-                "text": f"<|user|>\nShould I buy this product based on this review: {clean_text}\n<|assistant|>\nYes, this product is recommended. The customer gave it {rating}/5 stars with a {sentiment_label} sentiment ({sentiment:.2f})."
-            })
-        elif rating <= 2:
-            examples.append({
-                "text": f"<|user|>\nShould I buy this product based on this review: {clean_text}\n<|assistant|>\nNo, this product is not recommended. The customer gave it only {rating}/5 stars with a {sentiment_label} sentiment ({sentiment:.2f})."
-            })
-        
-        # Example 4: Feature Analysis
+        # Example 2: Only if review mentions specific features
         features = self._extract_features(text)
-        if features:
-            feature_text = ", ".join(features[:3])  # Top 3 features
+        if features and len(features) >= 2:
+            feature_text = ", ".join(features[:2])
             examples.append({
-                "text": f"<|user|>\nWhat features does this review mention: {clean_text}\n<|assistant|>\nThis review mentions: {feature_text}. The overall sentiment is {sentiment_label} ({sentiment:.2f}) with a {rating}/5 star rating."
+                "text": f"<|user|>\nWhat does this review say about product features: {clean_text}\n<|assistant|>\nThe review mentions {feature_text}. Overall sentiment is {sentiment_label} with {rating}/5 stars."
             })
-        
-        # Example 5: Summary
-        examples.append({
-            "text": f"<|user|>\nSummarize this product review: {clean_text}\n<|assistant|>\nThis is a {sentiment_label} review ({sentiment:.2f}) where the customer rated the product {rating}/5 stars. The review discusses various aspects of the product."
-        })
         
         return examples
     
