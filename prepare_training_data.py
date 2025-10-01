@@ -39,25 +39,27 @@ class TrainingDataPreparer:
         return training_examples
     
     def _create_examples_for_review(self, text: str, sentiment: float, rating: int, asin: str) -> List[Dict[str, str]]:
-        """Create training examples for a single review."""
+        """Create 2 training examples per review."""
         examples = []
         
         # Clean and truncate text
         clean_text = text.strip()[:300]  # Limit length
         sentiment_label = self._get_sentiment_label(sentiment)
         
-        # Create 1-2 examples per review (more realistic)
-        # Example 1: Sentiment Analysis
+        # Always create basic sentiment example
         examples.append({
             "text": f"<|user|>\nAnalyze this product review: {clean_text}\n<|assistant|>\nThis review shows {sentiment_label} sentiment ({sentiment:.2f}) with a {rating}/5 star rating."
         })
         
-        # Example 2: Only if review mentions specific features
+        # Extract features to determine how many examples to create
         features = self._extract_features(text)
-        if features and len(features) >= 2:
+        text_length = len(text)
+        
+        # Create 2 examples per review (simple and realistic)
+        if len(features) >= 2:
             feature_text = ", ".join(features[:2])
             examples.append({
-                "text": f"<|user|>\nWhat does this review say about product features: {clean_text}\n<|assistant|>\nThe review mentions {feature_text}. Overall sentiment is {sentiment_label} with {rating}/5 stars."
+                "text": f"<|user|>\nWhat features does this review mention: {clean_text}\n<|assistant|>\nThe review mentions {feature_text}. Overall sentiment is {sentiment_label} with {rating}/5 stars."
             })
         
         return examples

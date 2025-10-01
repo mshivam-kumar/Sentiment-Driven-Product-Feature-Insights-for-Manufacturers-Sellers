@@ -154,6 +154,8 @@ class ProductReviewFineTuner:
             early_stopping_patience=10,  # Stop if no improvement for 10 epochs
         )
         
+        # Early stopping: stops when loss stops improving for 10 epochs
+        
         # Create trainer
         trainer = Trainer(
             model=self.model,

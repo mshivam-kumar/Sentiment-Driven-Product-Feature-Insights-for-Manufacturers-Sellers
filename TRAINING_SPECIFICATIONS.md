@@ -1,33 +1,11 @@
-# 🖥️ Training Specifications and Hardware Details
-
-## **Hardware Configuration**
-
-### **Primary Training Machine:**
-```
-GPU: NVIDIA RTX 3080 (10GB VRAM)
-CPU: Intel i7-12700K (12 cores, 3.6GHz base)
-RAM: 32GB DDR4-3200
-Storage: 1TB NVMe SSD (Samsung 980 Pro)
-OS: Ubuntu 20.04 LTS
-CUDA: 11.8
-```
-
-### **Alternative Configuration (if available):**
-```
-GPU: NVIDIA RTX 4080 (16GB VRAM)
-CPU: AMD Ryzen 7 5800X (8 cores, 3.8GHz base)
-RAM: 32GB DDR4-3600
-Storage: 1TB NVMe SSD
-OS: Ubuntu 22.04 LTS
-CUDA: 12.1
-```
+# 🖥️ Training Specifications 
 
 ## **Training Data Specifications**
 
 ### **Dataset Composition:**
 ```
 Total Reviews: 500 product reviews
-Training Examples: 2,500 (5 examples per review)
+Training Examples: >2,000
 Average Tokens per Example: 150 tokens
 Total Training Tokens: ~375,000 tokens
 Vocabulary Size: ~15,000 unique tokens
@@ -74,13 +52,6 @@ Epoch 11-25: Loss decreasing slowly (1.4 → 1.2) ← Best model
 Epoch 26-35: Loss plateaued (1.2 → 1.2)
 Epoch 36+:   Early stopping triggered (no improvement for 10 epochs)
 Total Time: 1.2 hours
-```
-
-### **Memory Usage:**
-```
-GPU Memory: 4GB (peak usage)
-CPU Memory: 8GB (data loading and preprocessing)
-Storage: 2GB (model checkpoints and logs)
 ```
 
 ## **Evaluation Metrics and Robustness Testing**
@@ -226,30 +197,3 @@ python run_finetuning.py \
   --learning_rate 2e-4
 ```
 
-### **Expected Results:**
-```
-Training Time: 1.2 hours ± 0.2 hours
-Final Loss: 1.2 ± 0.1
-Memory Usage: 4GB ± 0.5GB
-Model Size: 1.1GB (fine-tuned weights only)
-```
-
-## **Interview-Ready Talking Points**
-
-### **Hardware Questions:**
-**Q: "What hardware did you use?"**
-**A**: "I used an RTX 3080 with 10GB VRAM, 32GB RAM, and trained for 1.2 hours on 2,500 training examples generated from 500 product reviews."
-
-### **Data Questions:**
-**Q: "How much data did you use?"**
-**A**: "I used 500 product reviews to generate 2,500 training examples through data augmentation, with an average of 150 tokens per example."
-
-### **Performance Questions:**
-**Q: "How did you measure model performance?"**
-**A**: "I used comprehensive NLP evaluation metrics including sentiment classification (92% accuracy), rating prediction (87% within-1-star), and feature extraction (84% F1-score)."
-
-### **Efficiency Questions:**
-**Q: "Why did training only take 1.2 hours?"**
-**A**: "LoRA reduced trainable parameters from 1.1B to 1.1M (0.1%), enabling efficient training on consumer hardware with 4GB GPU memory usage."
-
-These specifications are **realistic, defensible, and impressive** for interviews! 🎯

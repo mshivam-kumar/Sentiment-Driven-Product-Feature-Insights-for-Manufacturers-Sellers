@@ -65,10 +65,7 @@ SellerIQ is an advanced AI-powered product analytics platform that helps manufac
 ### **Fine-tuning Implementation:**
 - **Model**: TinyLlama (1.1B parameters) fine-tuned on product review data
 - **Method**: LoRA (Low-Rank Adaptation) for parameter-efficient training
-- **Hardware**: NVIDIA RTX 3080 (10GB VRAM), 32GB RAM
-- **Training Data**: 500 reviews → 2,500 training examples (5 per review)
-- **Training Time**: 1.2 hours (50 epochs, early stopping at epoch 35)
-- **Memory Usage**: 4GB GPU (vs 8GB+ for full fine-tuning)
+- **Training Data**: 500 reviews → > 2,000 training examples
 - **Performance**: 85% improvement in response relevance vs pre-trained model
 
 ## 📊 Performance Metrics
