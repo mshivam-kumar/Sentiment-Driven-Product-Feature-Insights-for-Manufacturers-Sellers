@@ -1,5 +1,3 @@
-# 🚀 SellerIQ - AI-Powered Smart Product Analytics for Sellers
-
 ![SellerIQ Header](docs/project_name_logo.png)
 
 > **🎯 Live Demo**: [https://selleriq.streamlit.app/](https://selleriq.streamlit.app/) - Try it now!
