@@ -124,7 +124,7 @@ class ProductReviewFineTuner:
         
         return tokenized_dataset, data_collator
     
-    def train(self, output_dir: str = "./fine_tuned_model", num_epochs: int = 3):
+    def train(self, output_dir: str = "./fine_tuned_model", num_epochs: int = 50):
         """Train the model."""
         if not self.model or not self.tokenizer:
             self.setup_model_and_tokenizer()
@@ -134,7 +134,7 @@ class ProductReviewFineTuner:
         # Prepare dataset
         dataset, data_collator = self.prepare_dataset()
         
-        # Training arguments
+        # Training arguments with early stopping
         training_args = TrainingArguments(
             output_dir=output_dir,
             num_train_epochs=num_epochs,
@@ -144,10 +144,14 @@ class ProductReviewFineTuner:
             learning_rate=2e-4,
             fp16=True,  # Use mixed precision
             logging_steps=10,
-            save_steps=500,
+            save_steps=100,  # Save more frequently
             evaluation_strategy="no",
-            save_total_limit=2,
+            save_total_limit=5,  # Keep more checkpoints
             remove_unused_columns=False,
+            load_best_model_at_end=True,  # Load best model
+            metric_for_best_model="train_loss",
+            greater_is_better=False,
+            early_stopping_patience=10,  # Stop if no improvement for 10 epochs
         )
         
         # Create trainer

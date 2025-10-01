@@ -53,7 +53,7 @@ def main():
     # Train the model
     model_path = fine_tuner.train(
         output_dir="./fine_tuned_tinyllama",
-        num_epochs=3
+        num_epochs=50
     )
     
     print(f"✅ Fine-tuning complete! Model saved to: {model_path}")
