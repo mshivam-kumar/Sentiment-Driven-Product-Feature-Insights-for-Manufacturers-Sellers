@@ -32,6 +32,10 @@ pytest-cov>=4.1.0
 pydantic>=1.10.0,<2.0.0
 typing-extensions>=4.0.0
 
+# Enhanced RAG with transformer models
+accelerate>=0.20.0
+tokenizers>=0.13.0
+
 # Optional: For better performance
 # numba>=0.57.0
 # cython>=0.29.0

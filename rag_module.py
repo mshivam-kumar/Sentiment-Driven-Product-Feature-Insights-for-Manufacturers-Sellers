@@ -21,6 +21,15 @@ except ImportError:
     RAG_AVAILABLE = False
     print("RAG dependencies not installed. Install with: pip install sentence-transformers scikit-learn")
 
+# Optional imports for transformer-based generation
+try:
+    from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+    import torch
+    TRANSFORMER_AVAILABLE = True
+except ImportError:
+    TRANSFORMER_AVAILABLE = False
+    print("Transformer dependencies not installed. Install with: pip install transformers torch")
+
 
 @dataclass
 class ReviewContext:
@@ -38,13 +47,17 @@ class RAGSystem:
     
     Provides intelligent responses by:
     1. Retrieving relevant reviews based on user queries
-    2. Generating contextual insights about products/features
+    2. Generating contextual insights about products/features using transformer models
     """
     
-    def __init__(self, model_name: str = "sentence-transformers/all-mpnet-base-v2"):
+    def __init__(self, model_name: str = "sentence-transformers/all-mpnet-base-v2", 
+                 generation_model: str = "distilgpt2"):
         """Initialize the RAG system."""
         self.model_name = model_name
+        self.generation_model_name = generation_model
         self.embeddings_model = None
+        self.generation_model = None
+        self.generation_pipeline = None
         self.review_embeddings = None
         self.reviews_data = []
         
@@ -56,6 +69,26 @@ class RAGSystem:
                 print(f"❌ Failed to load embeddings model: {e}")
                 # Don't modify global variable, just set local flag
                 self.embeddings_model = None
+        
+        # Initialize transformer-based generation model
+        if TRANSFORMER_AVAILABLE:
+            try:
+                # Use a small, efficient model for generation
+                self.generation_pipeline = pipeline(
+                    "text-generation",
+                    model=generation_model,
+                    tokenizer=generation_model,
+                    max_length=200,
+                    temperature=0.7,
+                    do_sample=True,
+                    pad_token_id=50256  # GPT-2 pad token
+                )
+                print(f"✅ Transformer generation model loaded: {generation_model}")
+            except Exception as e:
+                print(f"❌ Failed to load generation model: {e}")
+                self.generation_pipeline = None
+        else:
+            print("⚠️ Transformer generation not available, using rule-based generation")
         
         # Cache state
         self._cache_loaded = False
@@ -239,9 +272,64 @@ class RAGSystem:
         
         return contexts
     
+    def generate_insight_with_transformer(self, query: str, contexts: List[ReviewContext]) -> str:
+        """
+        Generate an insight using transformer model based on retrieved contexts.
+        
+        Args:
+            query: User's question
+            contexts: Retrieved review contexts
+            
+        Returns:
+            Generated insight text using transformer model
+        """
+        if not contexts or not self.generation_pipeline:
+            return self.generate_insight(query, contexts)  # Fallback to rule-based
+        
+        # Prepare context for the transformer
+        context_texts = [ctx.text for ctx in contexts[:3]]  # Use top 3 contexts
+        context_summary = " ".join(context_texts)[:500]  # Limit context length
+        
+        # Create prompt for the transformer
+        prompt = f"""Based on customer reviews, answer this question: {query}
+
+Customer reviews: {context_summary}
+
+Answer:"""
+        
+        try:
+            # Generate response using transformer
+            response = self.generation_pipeline(
+                prompt,
+                max_new_tokens=100,
+                temperature=0.7,
+                do_sample=True,
+                pad_token_id=50256
+            )
+            
+            # Extract generated text
+            generated_text = response[0]['generated_text']
+            
+            # Extract only the answer part (after "Answer:")
+            if "Answer:" in generated_text:
+                answer = generated_text.split("Answer:")[-1].strip()
+            else:
+                answer = generated_text[len(prompt):].strip()
+            
+            # Clean up the response
+            answer = answer.replace('\n', ' ').strip()
+            if not answer:
+                return self.generate_insight(query, contexts)  # Fallback
+            
+            return answer
+            
+        except Exception as e:
+            print(f"❌ Transformer generation failed: {e}")
+            return self.generate_insight(query, contexts)  # Fallback to rule-based
+
     def generate_insight(self, query: str, contexts: List[ReviewContext]) -> str:
         """
-        Generate an insight based on retrieved contexts.
+        Generate an insight based on retrieved contexts (rule-based fallback).
         
         Args:
             query: User's question
@@ -392,13 +480,14 @@ class RAGSystem:
         # Return most common words
         return sorted(word_counts.keys(), key=lambda x: word_counts[x], reverse=True)[:5]
     
-    def query(self, question: str, top_k: int = 5) -> Dict[str, Any]:
+    def query(self, question: str, top_k: int = 5, use_transformer: bool = True) -> Dict[str, Any]:
         """
         Main query interface for RAG system.
         
         Args:
             question: User's question
             top_k: Number of relevant reviews to retrieve
+            use_transformer: Whether to use transformer-based generation
             
         Returns:
             Dictionary with answer and supporting evidence
@@ -406,12 +495,19 @@ class RAGSystem:
         # Search for relevant reviews
         contexts = self.search_relevant_reviews(question, top_k)
         
-        # Generate insight
-        insight = self.generate_insight(question, contexts)
+        # Generate insight using transformer if available and requested
+        if use_transformer and self.generation_pipeline:
+            insight = self.generate_insight_with_transformer(question, contexts)
+            generation_method = "transformer"
+        else:
+            insight = self.generate_insight(question, contexts)
+            generation_method = "rule-based"
         
         return {
             'question': question,
             'answer': insight,
+            'generation_method': generation_method,
+            'transformer_available': TRANSFORMER_AVAILABLE,
             'supporting_reviews': [
                 {
                     'text': ctx.text[:300] + "..." if len(ctx.text) > 300 else ctx.text,

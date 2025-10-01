@@ -942,7 +942,7 @@ def main():
         
         if not RAG_AVAILABLE:
             st.warning("⚠️ RAG functionality is not available. Please install required dependencies:")
-            st.code("pip install sentence-transformers scikit-learn")
+            st.code("pip install sentence-transformers scikit-learn transformers torch")
             st.info("For now, you can use the Product Analysis and Feature Search options above.")
             
             # Debug information
@@ -1002,6 +1002,17 @@ def main():
             # Chat interface
             st.markdown("**Ask me anything about products and customer sentiment!**")
             
+            # AI Model Selection
+            col1, col2 = st.columns([2, 1])
+            with col1:
+                st.markdown("**🤖 AI Model Configuration:**")
+            with col2:
+                use_transformer = st.toggle(
+                    "Use Transformer Model", 
+                    value=True,
+                    help="Enable transformer-based text generation for more natural responses"
+                )
+            
             # Initialize session state for questions
             if 'user_question_input' not in st.session_state:
                 st.session_state.user_question_input = ''
@@ -1035,13 +1046,14 @@ def main():
             if st.button("💬 Ask AI", type="primary", use_container_width=True):
                 if user_question and user_question.strip():
                     with st.spinner("AI is thinking..."):
-                        # Get response from RAG system
-                        response = st.session_state.rag_system.query(user_question)
+                        # Get response from RAG system with transformer option
+                        response = st.session_state.rag_system.query(user_question, use_transformer=use_transformer)
                         
-                        # Add to chat history
+                        # Add to chat history with generation method info
                         st.session_state.chat_history.append({
                             'question': user_question,
                             'answer': response['answer'],
+                            'generation_method': response.get('generation_method', 'unknown'),
                             'timestamp': datetime.now().strftime("%H:%M:%S")
                         })
                         
@@ -1056,9 +1068,16 @@ def main():
                 st.markdown("### 💬 Chat History")
                 
                 for i, chat in enumerate(reversed(st.session_state.chat_history[-5:])):  # Show last 5 messages
-                    with st.expander(f"Q: {chat['question']} ({chat['timestamp']})", expanded=(i==0)):
+                    # Show generation method in the expander title
+                    method_emoji = "🤖" if chat.get('generation_method') == 'transformer' else "📝"
+                    with st.expander(f"{method_emoji} Q: {chat['question']} ({chat['timestamp']})", expanded=(i==0)):
                         st.write("**AI Response:**")
                         st.write(chat['answer'])
+                        
+                        # Show generation method
+                        if 'generation_method' in chat:
+                            method_text = "Transformer-based" if chat['generation_method'] == 'transformer' else "Rule-based"
+                            st.caption(f"Generated using: {method_text}")
                         
                         # Show supporting evidence if available
                         if 'supporting_reviews' in chat and chat['supporting_reviews']:
