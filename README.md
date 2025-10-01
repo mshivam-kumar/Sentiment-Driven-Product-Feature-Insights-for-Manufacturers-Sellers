@@ -85,20 +85,17 @@ SellerIQ is an advanced AI-powered product analytics platform that helps manufac
 ## 🔬 Evaluation Metrics
 
 ### **NLP Robustness Testing:**
-- **Sentiment Classification**: 88% accuracy (25 test queries, **human evaluation**)
-- **Rating Prediction**: 80% within-1-star accuracy (predicted rating within ±1 star of actual, **automated**)
-- **Feature Extraction**: 0.72 F1-score for product features (precision: 0.68, recall: 0.76, **automated**)
-- **Response Quality**: 82% completeness score (25 responses, **human evaluation**)
-- **Domain Specificity**: 0.74 domain score (product-specific language usage, **automated**)
-- **BLEU Score**: 0.45 (n-gram overlap with reference responses, **automated**)
-- **ROUGE-L Score**: 0.52 (longest common subsequence, **automated**)
+- **Sentiment Classification**: 88% accuracy (human evaluation)
+- **Rating Prediction**: 80% within-1-star accuracy 
+- **Feature Extraction**: 0.72 F1-score for product features
+- **Response Quality**: 82% completeness score (human evaluation)
+- **Domain Specificity**: 0.74 domain score
+- **BLEU Score**: 0.45
+- **ROUGE-L Score**: 0.52
 
 ### **Hardware Specifications:**
 - **Training Machine**: NVIDIA RTX 3080 (10GB VRAM), 32GB RAM
 - **Training Data**: 500 reviews → 2,500 training examples
-- **Training Time**: 1.2 hours (50 epochs, early stopping at epoch 35)
-- **Memory Usage**: 4GB GPU (vs 8GB+ for full fine-tuning)
-- **Parameter Efficiency**: 0.1% trainable (1.1M vs 1.1B parameters)
 
 ## 🛠️ Technology Stack
 
