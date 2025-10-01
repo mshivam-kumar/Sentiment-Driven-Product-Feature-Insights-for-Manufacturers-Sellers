@@ -36,6 +36,11 @@ typing-extensions>=4.0.0
 accelerate>=0.20.0
 tokenizers>=0.13.0
 
+# Fine-tuning dependencies
+peft>=0.4.0
+datasets>=2.14.0
+bitsandbytes>=0.41.0
+
 # Optional: For better performance
 # numba>=0.57.0
 # cython>=0.29.0

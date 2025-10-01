@@ -51,15 +51,18 @@ class RAGSystem:
     """
     
     def __init__(self, model_name: str = "sentence-transformers/all-mpnet-base-v2", 
-                 generation_model: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"):
+                 generation_model: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+                 fine_tuned_model_path: str = None):
         """Initialize the RAG system."""
         self.model_name = model_name
         self.generation_model_name = generation_model
+        self.fine_tuned_model_path = fine_tuned_model_path
         self.embeddings_model = None
         self.generation_model = None
         self.generation_pipeline = None
         self.review_embeddings = None
         self.reviews_data = []
+        self.is_fine_tuned = False
         
         if RAG_AVAILABLE:
             try:
@@ -73,20 +76,38 @@ class RAGSystem:
         # Initialize transformer-based generation model
         if TRANSFORMER_AVAILABLE:
             try:
-                # Use TinyLlama for better performance than DistilGPT-2
-                self.generation_pipeline = pipeline(
-                    "text-generation",
-                    model=generation_model,
-                    tokenizer=generation_model,
-                    max_new_tokens=100,  # Use max_new_tokens instead of max_length
-                    temperature=0.7,
-                    do_sample=True,
-                    pad_token_id=2,  # TinyLlama pad token
-                    torch_dtype="auto",  # Auto dtype for efficiency
-                    device_map="auto"  # Auto device placement
-                )
-                print(f"✅ Advanced transformer model loaded: {generation_model}")
-                print("🚀 Using TinyLlama (1.1B parameters) for superior text generation")
+                # Try to load fine-tuned model first
+                if fine_tuned_model_path and os.path.exists(fine_tuned_model_path):
+                    print(f"🎯 Loading fine-tuned model from {fine_tuned_model_path}...")
+                    self.generation_pipeline = pipeline(
+                        "text-generation",
+                        model=fine_tuned_model_path,
+                        tokenizer=fine_tuned_model_path,
+                        max_new_tokens=100,
+                        temperature=0.7,
+                        do_sample=True,
+                        torch_dtype="auto",
+                        device_map="auto"
+                    )
+                    self.is_fine_tuned = True
+                    print("✅ Fine-tuned model loaded successfully!")
+                    print("🚀 Using domain-specific fine-tuned TinyLlama for superior performance")
+                else:
+                    # Use pre-trained TinyLlama
+                    self.generation_pipeline = pipeline(
+                        "text-generation",
+                        model=generation_model,
+                        tokenizer=generation_model,
+                        max_new_tokens=100,
+                        temperature=0.7,
+                        do_sample=True,
+                        pad_token_id=2,
+                        torch_dtype="auto",
+                        device_map="auto"
+                    )
+                    print(f"✅ Pre-trained model loaded: {generation_model}")
+                    print("🚀 Using TinyLlama (1.1B parameters) for text generation")
+                    
             except Exception as e:
                 print(f"❌ Failed to load generation model: {e}")
                 print("🔄 Falling back to DistilGPT-2...")
@@ -530,6 +551,8 @@ Please provide a helpful answer based on the customer reviews above.
             'question': question,
             'answer': insight,
             'generation_method': generation_method,
+            'is_fine_tuned': self.is_fine_tuned,
+            'model_type': 'fine-tuned' if self.is_fine_tuned else 'pre-trained',
             'transformer_available': TRANSFORMER_AVAILABLE,
             'supporting_reviews': [
                 {

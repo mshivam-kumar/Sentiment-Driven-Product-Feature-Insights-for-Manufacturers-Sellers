@@ -1008,9 +1008,9 @@ def main():
                 st.markdown("**🤖 AI Model Configuration:**")
             with col2:
                 use_transformer = st.toggle(
-                    "Use TinyLlama AI Model", 
+                    "Use AI Model", 
                     value=True,
-                    help="Enable TinyLlama (1.1B parameters) for superior text generation"
+                    help="Enable transformer-based text generation (fine-tuned or pre-trained)"
                 )
             
             # Initialize session state for questions
@@ -1054,6 +1054,8 @@ def main():
                             'question': user_question,
                             'answer': response['answer'],
                             'generation_method': response.get('generation_method', 'unknown'),
+                            'is_fine_tuned': response.get('is_fine_tuned', False),
+                            'model_type': response.get('model_type', 'unknown'),
                             'timestamp': datetime.now().strftime("%H:%M:%S")
                         })
                         
@@ -1069,15 +1071,24 @@ def main():
                 
                 for i, chat in enumerate(reversed(st.session_state.chat_history[-5:])):  # Show last 5 messages
                     # Show generation method in the expander title
-                    method_emoji = "🤖" if chat.get('generation_method') == 'transformer' else "📝"
+                    if chat.get('is_fine_tuned'):
+                        method_emoji = "🎯"  # Fine-tuned
+                        method_text = "Fine-tuned TinyLlama"
+                    elif chat.get('generation_method') == 'transformer':
+                        method_emoji = "🤖"  # Pre-trained
+                        method_text = "Pre-trained TinyLlama"
+                    else:
+                        method_emoji = "📝"  # Rule-based
+                        method_text = "Rule-based"
+                    
                     with st.expander(f"{method_emoji} Q: {chat['question']} ({chat['timestamp']})", expanded=(i==0)):
                         st.write("**AI Response:**")
                         st.write(chat['answer'])
                         
-                        # Show generation method
+                        # Show generation method with fine-tuning status
                         if 'generation_method' in chat:
-                            method_text = "Transformer-based" if chat['generation_method'] == 'transformer' else "Rule-based"
-                            st.caption(f"Generated using: {method_text}")
+                            model_type = chat.get('model_type', 'unknown')
+                            st.caption(f"Generated using: {method_text} ({model_type})")
                         
                         # Show supporting evidence if available
                         if 'supporting_reviews' in chat and chat['supporting_reviews']:
