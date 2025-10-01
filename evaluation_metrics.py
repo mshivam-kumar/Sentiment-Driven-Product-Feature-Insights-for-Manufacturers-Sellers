@@ -173,34 +173,49 @@ class NLPEvaluator:
         }
     
     def evaluate_feature_extraction(self, predicted_features: List[List[str]], ground_truth_features: List[List[str]]) -> Dict[str, float]:
-        """Evaluate feature extraction performance."""
-        # Flatten all features
-        all_predicted = [feature for features in predicted_features for feature in features]
-        all_ground_truth = [feature for features in ground_truth_features for feature in features]
+        """
+        Evaluate feature extraction performance.
         
-        # Feature precision and recall
-        predicted_set = set(all_predicted)
-        ground_truth_set = set(all_ground_truth)
+        Methodology:
+        - For each of the 25 test examples, we have ground truth features
+        - Model predicts features from the review text
+        - We calculate precision, recall, and F1-score for feature extraction
+        - This is automated evaluation, not human evaluation
+        """
+        # For each test example, compare predicted vs ground truth features
+        precisions = []
+        recalls = []
+        f1_scores = []
         
-        if len(predicted_set) == 0:
-            precision = 0.0
-        else:
-            precision = len(predicted_set.intersection(ground_truth_set)) / len(predicted_set)
-        
-        if len(ground_truth_set) == 0:
-            recall = 0.0
-        else:
-            recall = len(predicted_set.intersection(ground_truth_set)) / len(ground_truth_set)
-        
-        if precision + recall == 0:
-            f1 = 0.0
-        else:
-            f1 = 2 * (precision * recall) / (precision + recall)
+        for pred_features, gt_features in zip(predicted_features, ground_truth_features):
+            # Convert to sets for comparison
+            pred_set = set(pred_features)
+            gt_set = set(gt_features)
+            
+            # Calculate precision and recall for this example
+            if len(pred_set) == 0:
+                precision = 0.0
+            else:
+                precision = len(pred_set.intersection(gt_set)) / len(pred_set)
+            
+            if len(gt_set) == 0:
+                recall = 0.0
+            else:
+                recall = len(pred_set.intersection(gt_set)) / len(gt_set)
+            
+            if precision + recall == 0:
+                f1 = 0.0
+            else:
+                f1 = 2 * (precision * recall) / (precision + recall)
+            
+            precisions.append(precision)
+            recalls.append(recall)
+            f1_scores.append(f1)
         
         return {
-            "feature_precision": precision,
-            "feature_recall": recall,
-            "feature_f1": f1
+            "feature_precision": np.mean(precisions),
+            "feature_recall": np.mean(recalls),
+            "feature_f1": np.mean(f1_scores)
         }
     
     def evaluate_response_quality(self, responses: List[str]) -> Dict[str, float]:
@@ -262,11 +277,19 @@ class NLPEvaluator:
         }
     
     def evaluate_bleu_rouge(self, generated_responses: List[str], reference_responses: List[str]) -> Dict[str, float]:
-        """Evaluate BLEU and ROUGE scores for response quality."""
+        """
+        Evaluate BLEU and ROUGE scores for response quality.
+        
+        Methodology:
+        - For each of the 25 test examples, we create reference responses
+        - Reference responses are template-based: "Based on the review, this shows {sentiment} sentiment with {rating}/5 stars"
+        - We compare generated responses against these reference responses
+        - This is automated evaluation using n-gram overlap metrics
+        """
         if not BLEU_ROUGE_AVAILABLE:
             return {"bleu_score": 0.0, "rouge_l": 0.0, "rouge_1": 0.0, "rouge_2": 0.0}
         
-        # BLEU Score
+        # BLEU Score - measures n-gram overlap with reference
         bleu_scores = []
         smoothie = SmoothingFunction().method4
         
@@ -278,7 +301,7 @@ class NLPEvaluator:
         
         avg_bleu = np.mean(bleu_scores)
         
-        # ROUGE Scores
+        # ROUGE Scores - measures overlap with reference
         scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
         rouge_1_scores = []
         rouge_2_scores = []
