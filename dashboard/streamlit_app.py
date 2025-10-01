@@ -1008,9 +1008,9 @@ def main():
                 st.markdown("**🤖 AI Model Configuration:**")
             with col2:
                 use_transformer = st.toggle(
-                    "Use Transformer Model", 
+                    "Use TinyLlama AI Model", 
                     value=True,
-                    help="Enable transformer-based text generation for more natural responses"
+                    help="Enable TinyLlama (1.1B parameters) for superior text generation"
                 )
             
             # Initialize session state for questions

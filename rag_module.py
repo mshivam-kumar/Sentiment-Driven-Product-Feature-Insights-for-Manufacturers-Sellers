@@ -51,7 +51,7 @@ class RAGSystem:
     """
     
     def __init__(self, model_name: str = "sentence-transformers/all-mpnet-base-v2", 
-                 generation_model: str = "distilgpt2"):
+                 generation_model: str = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"):
         """Initialize the RAG system."""
         self.model_name = model_name
         self.generation_model_name = generation_model
@@ -73,20 +73,38 @@ class RAGSystem:
         # Initialize transformer-based generation model
         if TRANSFORMER_AVAILABLE:
             try:
-                # Use a small, efficient model for generation
+                # Use TinyLlama for better performance than DistilGPT-2
                 self.generation_pipeline = pipeline(
                     "text-generation",
                     model=generation_model,
                     tokenizer=generation_model,
-                    max_length=200,
+                    max_new_tokens=100,  # Use max_new_tokens instead of max_length
                     temperature=0.7,
                     do_sample=True,
-                    pad_token_id=50256  # GPT-2 pad token
+                    pad_token_id=2,  # TinyLlama pad token
+                    torch_dtype="auto",  # Auto dtype for efficiency
+                    device_map="auto"  # Auto device placement
                 )
-                print(f"✅ Transformer generation model loaded: {generation_model}")
+                print(f"✅ Advanced transformer model loaded: {generation_model}")
+                print("🚀 Using TinyLlama (1.1B parameters) for superior text generation")
             except Exception as e:
                 print(f"❌ Failed to load generation model: {e}")
-                self.generation_pipeline = None
+                print("🔄 Falling back to DistilGPT-2...")
+                try:
+                    # Fallback to DistilGPT-2
+                    self.generation_pipeline = pipeline(
+                        "text-generation",
+                        model="distilgpt2",
+                        tokenizer="distilgpt2",
+                        max_new_tokens=100,
+                        temperature=0.7,
+                        do_sample=True,
+                        pad_token_id=50256
+                    )
+                    print("✅ Fallback model (DistilGPT-2) loaded successfully")
+                except Exception as e2:
+                    print(f"❌ Fallback also failed: {e2}")
+                    self.generation_pipeline = None
         else:
             print("⚠️ Transformer generation not available, using rule-based generation")
         
@@ -290,34 +308,39 @@ class RAGSystem:
         context_texts = [ctx.text for ctx in contexts[:3]]  # Use top 3 contexts
         context_summary = " ".join(context_texts)[:500]  # Limit context length
         
-        # Create prompt for the transformer
-        prompt = f"""Based on customer reviews, answer this question: {query}
+        # Create prompt for the transformer (optimized for TinyLlama)
+        prompt = f"""<|user|>
+Question: {query}
 
-Customer reviews: {context_summary}
+Context: {context_summary}
 
-Answer:"""
+Please provide a helpful answer based on the customer reviews above.
+<|assistant|>
+"""
         
         try:
             # Generate response using transformer
             response = self.generation_pipeline(
                 prompt,
-                max_new_tokens=100,
+                max_new_tokens=80,  # Shorter for better quality
                 temperature=0.7,
                 do_sample=True,
-                pad_token_id=50256
+                repetition_penalty=1.1,  # Reduce repetition
+                no_repeat_ngram_size=2
             )
             
             # Extract generated text
             generated_text = response[0]['generated_text']
             
-            # Extract only the answer part (after "Answer:")
-            if "Answer:" in generated_text:
-                answer = generated_text.split("Answer:")[-1].strip()
+            # Extract only the answer part (after "<|assistant|>")
+            if "<|assistant|>" in generated_text:
+                answer = generated_text.split("<|assistant|>")[-1].strip()
             else:
+                # Fallback: extract everything after the prompt
                 answer = generated_text[len(prompt):].strip()
             
             # Clean up the response
-            answer = answer.replace('\n', ' ').strip()
+            answer = answer.replace("<|endoftext|>", "").replace('\n', ' ').strip()
             if not answer:
                 return self.generate_insight(query, contexts)  # Fallback
             
