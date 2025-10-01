@@ -54,7 +54,7 @@ fallback_rate = fallback_activations / total_requests = 0.2%
 
 ---
 
-### **3. Training Speed: 70% Faster**
+### **3. Training Efficiency: LoRA vs Full Fine-tuning**
 
 **Baseline**: Full parameter fine-tuning (all 1.1B parameters)
 **LoRA**: Parameter-efficient fine-tuning (1.1M parameters)
@@ -63,19 +63,20 @@ fallback_rate = fallback_activations / total_requests = 0.2%
 ```
 Full Fine-tuning:
 - Parameters: 1.1B (all trainable)
-- Training time: 4 hours
-- GPU memory: 16GB
-- Cost: $50
+- Training time: 4+ hours (estimated)
+- GPU memory: 8GB+ (estimated)
+- Feasibility: Difficult on consumer hardware
 
 LoRA Fine-tuning:
 - Parameters: 1.1M (0.1% trainable)
-- Training time: 1.2 hours  
-- GPU memory: 4GB
-- Cost: $15
+- Training time: 1.2 hours (actual)
+- GPU memory: 4GB (actual)
+- Feasibility: Easy on consumer hardware
 
-Speed improvement: (4-1.2)/4 = 70%
-Cost reduction: (50-15)/50 = 70%
-Memory reduction: (16-4)/16 = 75%
+Key Benefits:
+- Parameter efficiency: 0.1% trainable parameters
+- Memory efficiency: 4GB vs 8GB+ GPU memory
+- Training feasibility: Possible on consumer hardware
 ```
 
 ---
@@ -123,24 +124,29 @@ Fine-tuned: "No, customers report poor quality with negative sentiment (-0.6) an
 
 ---
 
-### **6. Inference Speed: 3.2x Faster**
+### **6. Local Inference Benefits**
 
-**Comparison**: Fine-tuned TinyLlama vs GPT-3.5
+**Comparison**: Fine-tuned TinyLlama vs External APIs
 
 **Measurements**:
 ```
-GPT-3.5 API:
-- Response time: 2.5 seconds
+External API (GPT-3.5):
+- Response time: 2-3 seconds
 - Cost: $0.02 per request
 - Rate limit: 60 requests/minute
+- Privacy: Data sent to external service
 
 Fine-tuned TinyLlama:
-- Response time: 0.8 seconds  
-- Cost: $0.001 per request
+- Response time: 0.8-1.2 seconds
+- Cost: $0.001 per request (compute only)
 - Rate limit: Unlimited
+- Privacy: Data stays local
 
-Speed improvement: 2.5/0.8 = 3.1x faster
-Cost reduction: 0.02/0.001 = 20x cheaper
+Key Benefits:
+- Privacy: No data leaves your infrastructure
+- Cost: Lower long-term costs for high usage
+- Control: Full control over model and responses
+- Reliability: No dependency on external services
 ```
 
 ---

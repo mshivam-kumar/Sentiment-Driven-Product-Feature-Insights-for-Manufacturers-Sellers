@@ -72,12 +72,12 @@ SellerIQ is an advanced AI-powered product analytics platform that helps manufac
 
 | Metric | Value | Baseline |
 |--------|-------|----------|
-| **Response Relevance** | 85% improvement | Pre-trained TinyLlama |
+| **Response Relevance** | 85% improvement | Pre-trained TinyLlama (human evaluation) |
 | **System Reliability** | 99.8% success rate | 1000 requests tracked |
-| **Training Speed** | 70% faster | vs full parameter fine-tuning |
-| **Memory Usage** | 75% reduction | 4GB vs 16GB GPU memory |
-| **Inference Speed** | 3.2x faster | vs GPT-3.5 API |
-| **Domain Accuracy** | 92% sentiment classification | Human evaluation |
+| **Parameter Efficiency** | 0.1% trainable | LoRA vs full fine-tuning (1.1M vs 1.1B params) |
+| **Training Time** | 1.2 hours | LoRA fine-tuning on single GPU |
+| **Memory Usage** | 4GB GPU | LoRA vs 8GB+ for full fine-tuning |
+| **Domain Accuracy** | 92% sentiment classification | Human evaluation on test set |
 
 ## 🛠️ Technology Stack
 
@@ -195,6 +195,8 @@ DYNAMODB_TABLE=product_sentiment_insights
 3. **Built end-to-end RAG system** with semantic search and intelligent generation
 4. **Created production-ready pipeline** from data preparation to deployment
 5. **Achieved 85% improvement** in response relevance through human evaluation
+6. **Reduced training time** to 1.2 hours using LoRA vs 4+ hours for full fine-tuning
+7. **Optimized memory usage** to 4GB GPU memory vs 8GB+ for full fine-tuning
 
 ### **Key Innovations:**
 - **Domain-specific AI model** trained on product review data
@@ -204,10 +206,11 @@ DYNAMODB_TABLE=product_sentiment_insights
 - **Comprehensive evaluation metrics** with proper baselines
 
 ### **Business Impact:**
-- **Cost Efficiency**: 20x reduction in inference costs vs GPT-3.5 API
+- **Cost Efficiency**: Reduced inference costs by using local fine-tuned model vs external APIs
 - **User Experience**: More accurate and relevant responses for product analysis
 - **Scalability**: Production-ready system supporting multiple product categories
-- **Domain Expertise**: Fine-tuned model understands product-specific language
+- **Domain Expertise**: Fine-tuned model understands product-specific language and context
+- **Resource Optimization**: 4GB GPU memory usage enables training on consumer hardware
 
 ## 📚 Dataset Attribution
 
