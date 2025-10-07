@@ -1,70 +1,94 @@
-name: Deploy SellerIQ - Smart Product Analytics
+name: Deploy to AWS ECS
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY_BACKEND: sentiment-analysis-backend
+  ECR_REPOSITORY_FRONTEND: sentiment-analysis-frontend
+  ECS_SERVICE_BACKEND: sentiment-analysis-backend-service
+  ECS_SERVICE_FRONTEND: sentiment-analysis-frontend-service
+  ECS_CLUSTER: sentiment-analysis-cluster
+  ECS_TASK_DEFINITION_BACKEND: sentiment-analysis-backend-task
+  ECS_TASK_DEFINITION_FRONTEND: sentiment-analysis-frontend-task
+  CONTAINER_NAME_BACKEND: sentiment-analysis-backend
+  CONTAINER_NAME_FRONTEND: sentiment-analysis-frontend
 
 jobs:
-  test:
+  deploy:
+    name: Deploy
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-    
-    - name: Install basic dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install streamlit pandas numpy requests boto3
-        # Install only essential packages for basic testing
-    
-    - name: Test Streamlit app structure
-      run: |
-        python -c "
-        import streamlit as st
-        import os
-        print('✅ Streamlit import successful')
-        
-        # Check if main app file exists
-        if os.path.exists('dashboard/streamlit_app.py'):
-            print('✅ Main app file exists')
-        else:
-            print('❌ Main app file not found')
-            exit(1)
-        
-        # Check if requirements.txt exists
-        if os.path.exists('requirements.txt'):
-            print('✅ Requirements file exists')
-        else:
-            print('❌ Requirements file not found')
-            exit(1)
-        
-        print('✅ All basic tests passed!')
-        "
+    environment: production
 
-  deploy-to-streamlit:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    
-    - name: Deploy to Streamlit Cloud
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build, tag, and push backend image to Amazon ECR
+      id: build-backend-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
       run: |
-        echo "🚀 SellerIQ is ready for Streamlit Cloud deployment!"
-        echo "📋 Manual deployment steps:"
-        echo "1. Go to https://share.streamlit.io/"
-        echo "2. Sign in with GitHub"
-        echo "3. Click 'New app'"
-        echo "4. Select this repository"
-        echo "5. Set main file path: dashboard/streamlit_app.py"
-        echo "6. Click 'Deploy!'"
-        echo ""
-        echo "✅ Your SellerIQ app will be available at:"
-        echo "https://your-app-name.streamlit.app"
+        # Build backend image
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    - name: Build, tag, and push frontend image to Amazon ECR
+      id: build-frontend-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        # Build frontend image
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG ./frontend
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    - name: Fill in the new image ID in the Amazon ECS task definition (backend)
+      id: task-def-backend
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: .aws/task-definition-backend.json
+        container-name: ${{ env.CONTAINER_NAME_BACKEND }}
+        image: ${{ steps.build-backend-image.outputs.image }}
+
+    - name: Fill in the new image ID in the Amazon ECS task definition (frontend)
+      id: task-def-frontend
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: .aws/task-definition-frontend.json
+        container-name: ${{ env.CONTAINER_NAME_FRONTEND }}
+        image: ${{ steps.build-frontend-image.outputs.image }}
+
+    - name: Deploy Amazon ECS task definition (backend)
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def-backend.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE_BACKEND }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
+
+    - name: Deploy Amazon ECS task definition (frontend)
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def-frontend.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE_FRONTEND }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
