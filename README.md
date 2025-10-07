@@ -1,10 +1,20 @@
 ![SellerIQ Header](docs/project_name_logo.png)
 
-> **🎯 Live Demo**: [https://selleriq.streamlit.app/](https://selleriq.streamlit.app/) - Try it now!
+> **🎯 Full-Stack Web Application**: Modern React frontend + FastAPI backend with AI/ML integration
 
 ## 🌟 What is SellerIQ?
 
 SellerIQ is an advanced AI-powered product analytics platform that helps manufacturers and sellers understand customer sentiment about specific product features. Built with cutting-edge RAG (Retrieval-Augmented Generation) technology and fine-tuned transformer models, it provides intelligent insights from product reviews.
+
+## 🚀 **NEW: Full-Stack Web Application**
+
+**Modern React Frontend + FastAPI Backend** with complete AI/ML integration:
+
+- **🌐 React Frontend**: Modern, responsive web interface with SellerIQ branding
+- **⚡ FastAPI Backend**: High-performance REST API with ML model integration  
+- **🐳 Docker Deployment**: Containerized application with Docker Compose
+- **☁️ AWS Ready**: Complete cloud deployment with ECS, ECR, and ALB
+- **🔄 CI/CD Pipeline**: Automated deployment with GitHub Actions
 
 ## 🎯 Problem Solved
 
@@ -98,64 +108,98 @@ SellerIQ is an advanced AI-powered product analytics platform that helps manufac
 
 ### **Backend:**
 - **Python** - Core application logic
-- **FastAPI** - REST API framework
-- **AWS Lambda** - Serverless compute
-- **DynamoDB** - NoSQL database for insights
-- **API Gateway** - API management
+- **FastAPI** - REST API framework with automatic OpenAPI documentation
+- **RAG System** - Retrieval-Augmented Generation with fine-tuned TinyLlama
+- **ML Models** - Sentiment analysis, feature extraction, and text generation
+- **CORS Support** - Cross-origin requests for frontend integration
 
 ### **Frontend:**
-- **Streamlit** - Interactive web application
+- **React** - Modern JavaScript library for building user interfaces
+- **Recharts** - Interactive data visualization and charts
+- **Responsive Design** - Works on desktop, tablet, and mobile
 - **Real-time Chat Interface** - AI assistant with model indicators
-- **Responsive Design** - Works on desktop and mobile
+- **Data Persistence** - Local storage for session management
 
 ### **DevOps:**
-- **Docker** - Containerization
-- **GitHub Actions** - CI/CD pipeline
-- **AWS ECS** - Container orchestration
-- **Streamlit Cloud** - Application hosting
+- **Docker** - Containerization with multi-stage builds
+- **Docker Compose** - Local development environment
+- **GitHub Actions** - CI/CD pipeline with automated testing
+- **AWS ECS Fargate** - Serverless container orchestration
+- **AWS ECR** - Container registry
+- **AWS ALB** - Application Load Balancer for traffic distribution
+- **Terraform** - Infrastructure as Code (IaC)
 
 ## 🚀 Quick Start
 
-### **Option 1: Try Live Demo**
-Visit [https://selleriq.streamlit.app/](https://selleriq.streamlit.app/) to test the application immediately!
-
-### **Option 2: Local Development**
+### **Option 1: Full-Stack Web Application (Recommended)**
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/selleriq.git
-cd selleriq
+git clone https://github.com/mshivam-kumar/Sentiment-Driven-Product-Feature-Insights-for-Manufacturers-Sellers.git
+cd Sentiment-Driven-Product-Feature-Insights-for-Manufacturers-Sellers
 ```
 
-2. **Install dependencies:**
+2. **Start with Docker Compose (Easiest):**
+```bash
+docker-compose up --build
+```
+
+3. **Access the application:**
+- **Frontend**: [http://localhost:3000](http://localhost:3000) - React web interface
+- **Backend API**: [http://localhost:8001](http://localhost:8001) - FastAPI with docs at `/docs`
+
+### **Option 2: Manual Setup**
+
+1. **Backend Setup:**
+```bash
+cd backend
+pip install -r requirements.txt
+python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+```
+
+2. **Frontend Setup:**
+```bash
+cd frontend
+npm install
+npm run build
+cd build && python3 -m http.server 3000
+```
+
+### **Option 3: Original Streamlit App**
 ```bash
 pip install -r requirements.txt
-```
-
-3. **Run the application:**
-```bash
 streamlit run dashboard/streamlit_app.py
 ```
 
-4. **Access the app:**
-Open [http://localhost:8501](http://localhost:8501) in your browser
-
 ## 🎯 How to Use
 
-### **1. Product Analysis**
-- Enter an Amazon ASIN (e.g., B08JTNQFZY)
-- Select specific features to analyze (optional)
-- Get comprehensive sentiment analysis with supporting reviews
+### **🌐 Full-Stack Web Application Features:**
 
-### **2. Feature Search**
-- Search for specific features across all products
-- Compare sentiment scores between products
-- Filter by category and time period
+#### **1. Product Analysis Dashboard**
+- **Modern React Interface**: Clean, responsive design with SellerIQ branding
+- **Interactive Charts**: Sentiment distribution, feature scores, and trend analysis
+- **Real-time Analysis**: Enter ASIN and get instant insights
+- **Data Persistence**: Your analysis is saved when switching between tabs
+- **Print Functionality**: Generate PDF reports of your analysis
 
-### **3. AI Chat Assistant**
-- Ask natural language questions about products
-- Get context-aware responses with supporting evidence
-- Toggle between fine-tuned and pre-trained models
+#### **2. Feature Search Engine**
+- **Advanced Search**: Find specific features across all products
+- **Visual Comparisons**: Interactive charts comparing sentiment scores
+- **Category Filtering**: Filter by product categories and time periods
+- **Export Options**: Download search results and visualizations
+
+#### **3. AI Chat Assistant**
+- **Fine-tuned TinyLlama**: Domain-specific responses with 85% improvement
+- **Context-Aware**: Understands product-specific language and context
+- **Supporting Evidence**: Shows relevant reviews for each response
+- **Model Indicators**: See which model generated each response
+- **Chat History**: Persistent conversation history
+
+### **🔧 API Endpoints:**
+- `GET /api/v1/product/{asin}` - Product sentiment analysis
+- `POST /api/v1/features/search` - Feature search across products
+- `POST /api/v1/chat/query` - AI chat assistant
+- `GET /api/v1/chat/status` - Model status and configuration
 
 ## 📈 Sample Results
 
@@ -165,6 +209,43 @@ The application generates comprehensive reports in PDF format:
 |------------------------|------------------------|-------------------|
 | [Hair Product Analysis.pdf](docs/results/hair_product_analysis.pdf) | [Style Search Analysis.pdf](docs/results/style_search_feature_analysis.pdf) | [AI Assistant Chat.pdf](docs/results/AI_assistant_chat.pdf) |
 | <img src="docs/results/prod_analysis.png" width="200" /> | <img src="docs/results/feature_search.png" width="200" /> | <img src="docs/results/ai_assistant_chat.png" width="200" /> |
+
+## 🚀 Deployment
+
+### **Local Development:**
+```bash
+# Start both frontend and backend
+docker-compose up --build
+
+# Or run individually
+# Backend: http://localhost:8001
+# Frontend: http://localhost:3000
+```
+
+### **AWS Cloud Deployment:**
+```bash
+# 1. Configure AWS credentials
+aws configure
+
+# 2. Deploy infrastructure with Terraform
+cd terraform
+terraform init
+terraform plan
+terraform apply
+
+# 3. Push to GitHub to trigger automated deployment
+git push origin main
+```
+
+### **Manual AWS Deployment:**
+```bash
+# Build and push Docker images
+docker build -t your-ecr-repo/backend .
+docker build -t your-ecr-repo/frontend ./frontend
+
+# Deploy to ECS
+aws ecs update-service --cluster your-cluster --service your-service
+```
 
 ## 🔧 Advanced Configuration
 
