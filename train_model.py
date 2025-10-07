@@ -43,23 +43,23 @@ class ProductReviewFineTuner:
             if not text or len(text.strip()) < 20:
                 continue
                 
-            # Create training examples in chat format
+            # Create training examples in simple format
             # Example 1: Sentiment analysis
             sentiment_label = "positive" if sentiment > 0.2 else "negative" if sentiment < -0.2 else "neutral"
             training_examples.append({
-                "text": f"<|user|>\nAnalyze the sentiment of this review: {text[:200]}...\n<|assistant|>\nThis review has a {sentiment_label} sentiment (score: {sentiment:.2f}). The customer rated it {rating}/5 stars."
+                "text": f"Analyze the sentiment of this review: {text[:200]}. This review has a {sentiment_label} sentiment (score: {sentiment:.2f}). The customer rated it {rating}/5 stars."
             })
             
             # Example 2: Feature extraction
             if 'quality' in text.lower():
                 training_examples.append({
-                    "text": f"<|user|>\nWhat do customers say about quality in this review: {text[:200]}...\n<|assistant|>\nBased on this review, the customer mentions quality aspects. The sentiment is {sentiment_label} with a score of {sentiment:.2f}."
+                    "text": f"What do customers say about quality in this review: {text[:200]}. Based on this review, the customer mentions quality aspects. The sentiment is {sentiment_label} with a score of {sentiment:.2f}."
                 })
             
             # Example 3: Product recommendation
             if rating >= 4:
                 training_examples.append({
-                    "text": f"<|user|>\nShould I recommend this product based on: {text[:200]}...\n<|assistant|>\nYes, this product should be recommended. The customer gave it {rating}/5 stars and the sentiment is {sentiment_label} ({sentiment:.2f})."
+                    "text": f"Should I recommend this product based on: {text[:200]}. Yes, this product should be recommended. The customer gave it {rating}/5 stars and the sentiment is {sentiment_label} ({sentiment:.2f})."
                 })
         
         self.training_data = training_examples
@@ -109,7 +109,7 @@ class ProductReviewFineTuner:
                 truncation=True,
                 padding=True,
                 max_length=512,
-                return_tensors="pt"
+                return_tensors=None  # Don't return tensors in mapping
             )
         
         # Create dataset
@@ -145,13 +145,13 @@ class ProductReviewFineTuner:
             fp16=True,  # Use mixed precision
             logging_steps=10,
             save_steps=100,  # Save more frequently
-            evaluation_strategy="no",
+            eval_strategy="no",  # Disable evaluation for now
             save_total_limit=5,  # Keep more checkpoints
             remove_unused_columns=False,
-            load_best_model_at_end=True,  # Load best model
-            metric_for_best_model="train_loss",
-            greater_is_better=False,
-            early_stopping_patience=10,  # Stop if no improvement for 10 epochs
+            # load_best_model_at_end=True,  # Load best model - disabled without eval
+            # metric_for_best_model="eval_loss",  # Disabled without eval
+            # greater_is_better=False,  # Disabled without eval
+            # early_stopping_patience=10,  # Stop if no improvement for 10 epochs - deprecated
         )
         
         # Early stopping: stops when loss stops improving for 10 epochs
