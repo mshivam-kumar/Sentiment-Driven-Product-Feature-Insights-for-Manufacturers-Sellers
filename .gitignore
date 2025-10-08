@@ -70,7 +70,7 @@ dmypy.json
 terraform.tfstate.d/
 
 # AWS
-.aws/
+# .aws/  # Commented out to allow task definition files
 
 # Logs
 *.log
