@@ -136,78 +136,81 @@ resource "aws_lb" "main" {
   }
 }
 
-resource "aws_lb_target_group" "backend" {
-  name     = "${var.project_name}-backend-tg"
-  port     = 8001
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    interval            = 30
-    matcher             = "200"
-    path                = "/health"
-    port                = "traffic-port"
-    protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 2
-  }
-
-  tags = {
-    Name = "${var.project_name}-backend-tg"
-  }
-}
-
-resource "aws_lb_target_group" "frontend" {
-  name     = "${var.project_name}-frontend-tg"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    interval            = 30
-    matcher             = "200"
-    path                = "/"
-    port                = "traffic-port"
-    protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 2
-  }
-
-  tags = {
-    Name = "${var.project_name}-frontend-tg"
-  }
-}
-
-resource "aws_lb_listener" "main" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.frontend.arn
-  }
-}
-
-resource "aws_lb_listener_rule" "api" {
-  listener_arn = aws_lb_listener.main.arn
-  priority     = 100
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.backend.arn
-  }
-
-  condition {
-    path_pattern {
-      values = ["/api/*"]
-    }
-  }
-}
+# Temporarily commented out - using manually created target groups
+# resource "aws_lb_target_group" "backend" {
+#   name        = "${var.project_name}-backend-tg"
+#   port        = 8001
+#   protocol    = "HTTP"
+#   vpc_id      = aws_vpc.main.id
+#   target_type = "ip"
+# 
+#   health_check {
+#     enabled             = true
+#     healthy_threshold   = 2
+#     interval            = 30
+#     matcher             = "200"
+#     path                = "/health"
+#     port                = "traffic-port"
+#     protocol            = "HTTP"
+#     timeout             = 5
+#     unhealthy_threshold = 2
+#   }
+# 
+#   tags = {
+#     Name = "${var.project_name}-backend-tg"
+#   }
+# }
+# 
+# resource "aws_lb_target_group" "frontend" {
+#   name        = "${var.project_name}-frontend-tg"
+#   port        = 80
+#   protocol    = "HTTP"
+#   vpc_id      = aws_vpc.main.id
+#   target_type = "ip"
+# 
+#   health_check {
+#     enabled             = true
+#     healthy_threshold   = 2
+#     interval            = 30
+#     matcher             = "200"
+#     path                = "/"
+#     port                = "traffic-port"
+#     protocol            = "HTTP"
+#     timeout             = 5
+#     unhealthy_threshold = 2
+#   }
+# 
+#   tags = {
+#     Name = "${var.project_name}-frontend-tg"
+#   }
+# }
+# 
+# resource "aws_lb_listener" "main" {
+#   load_balancer_arn = aws_lb.main.arn
+#   port              = "80"
+#   protocol          = "HTTP"
+# 
+#   default_action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.frontend.arn
+#   }
+# }
+# 
+# resource "aws_lb_listener_rule" "api" {
+#   listener_arn = aws_lb_listener.main.arn
+#   priority     = 100
+# 
+#   action {
+#     type             = "forward"
+#     target_group_arn = aws_lb_target_group.backend.arn
+#   }
+# 
+#   condition {
+#     path_pattern {
+#       values = ["/api/*"]
+#     }
+#   }
+# }
 
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
@@ -295,6 +298,154 @@ resource "aws_iam_role" "ecs_task_role" {
 
   tags = {
     Name = "${var.project_name}-ecs-task-role"
+  }
+}
+
+# ECS Services
+resource "aws_ecs_service" "backend" {
+  name            = "${var.project_name}-backend-service"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.backend.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = aws_subnet.public[*].id
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = true
+  }
+
+  load_balancer {
+    target_group_arn = "arn:aws:elasticloadbalancing:us-east-1:568672915510:targetgroup/sentiment-analysis-backend-tg/d7cd55e0d316464c"
+    container_name   = "${var.project_name}-backend"
+    container_port   = 8001
+  }
+
+  tags = {
+    Name = "${var.project_name}-backend-service"
+  }
+}
+
+resource "aws_ecs_service" "frontend" {
+  name            = "${var.project_name}-frontend-service"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.frontend.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = aws_subnet.public[*].id
+    security_groups  = [aws_security_group.ecs.id]
+    assign_public_ip = true
+  }
+
+  load_balancer {
+    target_group_arn = "arn:aws:elasticloadbalancing:us-east-1:568672915510:targetgroup/sentiment-analysis-frontend-tg/a53ded132edd6d44"
+    container_name   = "${var.project_name}-frontend"
+    container_port   = 80
+  }
+
+  tags = {
+    Name = "${var.project_name}-frontend-service"
+  }
+}
+
+# ECS Task Definitions
+resource "aws_ecs_task_definition" "backend" {
+  family                   = "${var.project_name}-backend-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "1024"
+  memory                   = "2048"
+  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+  task_role_arn           = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name  = "${var.project_name}-backend"
+      image = "${aws_ecr_repository.backend.repository_url}:latest"
+      portMappings = [
+        {
+          containerPort = 8001
+          protocol      = "tcp"
+        }
+      ]
+      essential = true
+      environment = [
+        {
+          name  = "PYTHONUNBUFFERED"
+          value = "1"
+        }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.backend.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+      healthCheck = {
+        command = [
+          "CMD-SHELL",
+          "curl -f http://localhost:8001/health || exit 1"
+        ]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
+      }
+    }
+  ])
+
+  tags = {
+    Name = "${var.project_name}-backend-task"
+  }
+}
+
+resource "aws_ecs_task_definition" "frontend" {
+  family                   = "${var.project_name}-frontend-task"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "512"
+  memory                   = "1024"
+  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+  task_role_arn           = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name  = "${var.project_name}-frontend"
+      image = "${aws_ecr_repository.frontend.repository_url}:latest"
+      portMappings = [
+        {
+          containerPort = 80
+          protocol      = "tcp"
+        }
+      ]
+      essential = true
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.frontend.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+      healthCheck = {
+        command = [
+          "CMD-SHELL",
+          "curl -f http://localhost/ || exit 1"
+        ]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 30
+      }
+    }
+  ])
+
+  tags = {
+    Name = "${var.project_name}-frontend-task"
   }
 }
 
