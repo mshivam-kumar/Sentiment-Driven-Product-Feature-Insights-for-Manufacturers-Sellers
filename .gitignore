@@ -148,6 +148,9 @@ Thumbs.db
 *.bin
 *.safetensors
 
+# Exception: Allow data_ingest files for deployment
+!data_ingest/**/*.jsonl
+
 # Model files (use Git LFS instead)
 models/*/checkpoints/
 models/*/outputs/
