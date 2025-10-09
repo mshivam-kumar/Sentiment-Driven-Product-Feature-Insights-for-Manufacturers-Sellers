@@ -334,3 +334,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **🚀 Live Demo**: [https://selleriq.streamlit.app/](https://selleriq.streamlit.app/)
 
 Experience the power of AI-driven product analytics with our fine-tuned transformer models and intelligent RAG system!# Deployment trigger Thursday 09 October 2025 01:42:43 PM IST
+# Manual deployment trigger Thursday 09 October 2025 02:34:36 PM IST
