@@ -63,19 +63,29 @@ jobs:
 
     - name: Fill in the new image ID in the Amazon ECS task definition (backend)
       id: task-def-backend
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: .aws/task-definition-backend.json
-        container-name: ${{ env.CONTAINER_NAME_BACKEND }}
-        image: ${{ steps.build-backend-image.outputs.image }}
+      run: |
+        # Get the working task definition (revision 14) that has proper ephemeral storage
+        TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition sentiment-analysis-backend-task:14 --query taskDefinition)
+        # Update the image URI
+        NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "${{ steps.build-backend-image.outputs.image }}" '.containerDefinitions[0].image = $IMAGE')
+        # Remove fields that shouldn't be in the new task definition
+        NEW_TASK_DEFINITION=$(echo $NEW_TASK_DEFINITION | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)')
+        # Save the new task definition
+        echo "$NEW_TASK_DEFINITION" > new-task-definition-backend.json
+        echo "task-definition=new-task-definition-backend.json" >> $GITHUB_OUTPUT
 
     - name: Fill in the new image ID in the Amazon ECS task definition (frontend)
       id: task-def-frontend
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: .aws/task-definition-frontend.json
-        container-name: ${{ env.CONTAINER_NAME_FRONTEND }}
-        image: ${{ steps.build-frontend-image.outputs.image }}
+      run: |
+        # Get the working task definition (revision 6) that has proper configuration
+        TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition sentiment-analysis-frontend-task:6 --query taskDefinition)
+        # Update the image URI
+        NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq --arg IMAGE "${{ steps.build-frontend-image.outputs.image }}" '.containerDefinitions[0].image = $IMAGE')
+        # Remove fields that shouldn't be in the new task definition
+        NEW_TASK_DEFINITION=$(echo $NEW_TASK_DEFINITION | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)')
+        # Save the new task definition
+        echo "$NEW_TASK_DEFINITION" > new-task-definition-frontend.json
+        echo "task-definition=new-task-definition-frontend.json" >> $GITHUB_OUTPUT
 
     - name: Deploy Amazon ECS task definition (backend)
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
