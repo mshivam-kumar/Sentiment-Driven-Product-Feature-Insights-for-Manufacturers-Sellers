@@ -25,33 +25,44 @@ async def get_product_analysis(
     Get comprehensive sentiment analysis for a specific product (ASIN)
     """
     try:
-        # Call your existing AWS API
-        url = f"{API_BASE_URL}/sentiment/product/{asin}"
-        params = {}
-        if window:
-            params['window'] = window
-            
-        response = requests.get(url, params=params, timeout=30)
+        # For now, return mock data until we implement proper data processing
+        mock_data = {
+            "asin": asin,
+            "product_title": f"Sample Product {asin}",
+            "overall_sentiment": {
+                "positive": 65.2,
+                "negative": 20.1,
+                "neutral": 14.7
+            },
+            "sentiment_trend": [
+                {"date": "2024-01-01", "positive": 60, "negative": 25, "neutral": 15},
+                {"date": "2024-02-01", "positive": 62, "negative": 23, "neutral": 15},
+                {"date": "2024-03-01", "positive": 65, "negative": 20, "neutral": 15},
+                {"date": "2024-04-01", "positive": 68, "negative": 18, "neutral": 14},
+                {"date": "2024-05-01", "positive": 65, "negative": 20, "neutral": 15}
+            ],
+            "top_features": [
+                {"feature": "battery life", "sentiment": 0.8, "mentions": 45},
+                {"feature": "build quality", "sentiment": 0.7, "mentions": 38},
+                {"feature": "camera", "sentiment": 0.6, "mentions": 32},
+                {"feature": "price", "sentiment": -0.3, "mentions": 28},
+                {"feature": "screen", "sentiment": 0.5, "mentions": 25}
+            ],
+            "recent_reviews": [
+                {"rating": 5, "text": "Great product, excellent battery life!", "date": "2024-05-01"},
+                {"rating": 4, "text": "Good quality but a bit expensive", "date": "2024-04-28"},
+                {"rating": 5, "text": "Love the camera quality", "date": "2024-04-25"}
+            ],
+            "window": window or "all_time"
+        }
         
-        if response.status_code == 200:
-            data = response.json()
-            return {
-                "success": True,
-                "data": data,
-                "asin": asin,
-                "window": window
-            }
-        else:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"API Error: {response.text}"
-            )
+        return {
+            "success": True,
+            "data": mock_data,
+            "asin": asin,
+            "window": window
+        }
             
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch product analysis: {str(e)}"
-        )
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -67,30 +78,27 @@ async def get_top_features(
     Get top features by sentiment for a specific product
     """
     try:
-        url = f"{API_BASE_URL}/sentiment/product/{asin}/top-features"
-        params = {'limit': limit}
+        # Mock data for top features
+        mock_features = [
+            {"feature": "battery life", "sentiment": 0.8, "mentions": 45},
+            {"feature": "build quality", "sentiment": 0.7, "mentions": 38},
+            {"feature": "camera", "sentiment": 0.6, "mentions": 32},
+            {"feature": "price", "sentiment": -0.3, "mentions": 28},
+            {"feature": "screen", "sentiment": 0.5, "mentions": 25},
+            {"feature": "performance", "sentiment": 0.4, "mentions": 22},
+            {"feature": "design", "sentiment": 0.3, "mentions": 20},
+            {"feature": "connectivity", "sentiment": 0.2, "mentions": 18},
+            {"feature": "storage", "sentiment": 0.1, "mentions": 15},
+            {"feature": "software", "sentiment": -0.1, "mentions": 12}
+        ]
         
-        response = requests.get(url, params=params, timeout=30)
-        
-        if response.status_code == 200:
-            data = response.json()
-            return {
-                "success": True,
-                "data": data,
-                "asin": asin,
-                "limit": limit
-            }
-        else:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"API Error: {response.text}"
-            )
+        return {
+            "success": True,
+            "data": mock_features[:limit],
+            "asin": asin,
+            "limit": limit
+        }
             
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch top features: {str(e)}"
-        )
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -103,39 +111,46 @@ async def get_product_features(asin: str):
     Get all features for a specific product
     """
     try:
-        url = f"{API_BASE_URL}/sentiment/product/{asin}"
-        
-        response = requests.get(url, timeout=30)
-        
-        if response.status_code == 200:
-            data = response.json()
-            # Extract features from the response
-            features = []
-            if 'features' in data:
-                for feature in data['features']:
-                    features.append({
-                        "name": feature.get('feature', ''),
-                        "sentiment": feature.get('sentiment', 0),
-                        "count": feature.get('count', 0),
-                        "snippets": feature.get('snippets', [])
-                    })
-            
-            return {
-                "success": True,
-                "features": features,
-                "asin": asin
+        # Mock data for product features
+        mock_features = [
+            {
+                "name": "battery life",
+                "sentiment": 0.8,
+                "count": 45,
+                "snippets": ["Great battery life", "Lasts all day", "Excellent battery performance"]
+            },
+            {
+                "name": "build quality",
+                "sentiment": 0.7,
+                "count": 38,
+                "snippets": ["Solid build", "Well constructed", "Durable design"]
+            },
+            {
+                "name": "camera",
+                "sentiment": 0.6,
+                "count": 32,
+                "snippets": ["Good camera", "Nice photos", "Decent image quality"]
+            },
+            {
+                "name": "price",
+                "sentiment": -0.3,
+                "count": 28,
+                "snippets": ["A bit expensive", "Pricey", "Good value for money"]
+            },
+            {
+                "name": "screen",
+                "sentiment": 0.5,
+                "count": 25,
+                "snippets": ["Nice display", "Good screen", "Clear visuals"]
             }
-        else:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"API Error: {response.text}"
-            )
+        ]
+        
+        return {
+            "success": True,
+            "features": mock_features,
+            "asin": asin
+        }
             
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch product features: {str(e)}"
-        )
     except Exception as e:
         raise HTTPException(
             status_code=500,
