@@ -31,7 +31,13 @@ app = FastAPI(
 # CORS middleware for React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000"],  # React dev server
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://localhost:3001", 
+        "http://127.0.0.1:3000",
+        "http://sentiment-analysis-alb-1018237225.us-east-1.elb.amazonaws.com",  # ALB domain
+        "https://sentiment-analysis-alb-1018237225.us-east-1.elb.amazonaws.com"  # ALB domain with HTTPS
+    ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
