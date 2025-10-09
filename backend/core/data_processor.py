@@ -18,14 +18,19 @@ class ReviewDataProcessor:
             data_dir,
             os.path.join(os.path.dirname(__file__), '..', '..', 'data_ingest', 'data_ingest'),  # Local development
             os.path.join('/app', 'data_ingest', 'data_ingest'),  # Docker container
+            os.path.join('/app', 'data_ingest'),  # Docker container (alternative path)
             os.path.join(os.getcwd(), 'data_ingest', 'data_ingest'),  # Current working directory
+            os.path.join(os.getcwd(), 'data_ingest'),  # Current working directory (alternative)
         ]
         
         self.data_dir = None
         for dir_path in possible_dirs:
             if dir_path and os.path.exists(dir_path):
                 self.data_dir = dir_path
+                print(f"✅ Found data directory: {dir_path}")
                 break
+            else:
+                print(f"❌ Data directory not found: {dir_path}")
         
         if not self.data_dir:
             print("⚠️ Warning: No data directory found. Using sample data only.")
