@@ -5,16 +5,19 @@ Handles cross-product feature search and comparison
 
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional, Dict, Any, List
-import requests
+import sys
 import os
 from dotenv import load_dotenv
+
+# Add core to path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'core'))
 
 load_dotenv()
 
 router = APIRouter()
 
-# AWS API Gateway URL (from your existing deployment)
-API_BASE_URL = os.getenv('API_BASE_URL', 'https://f3157r5ca4.execute-api.us-east-1.amazonaws.com/dev')
+# Import data processor
+from data_processor import data_processor
 
 @router.get("/features/search")
 async def search_features(
@@ -27,40 +30,18 @@ async def search_features(
     Search for features across all products
     """
     try:
-        url = f"{API_BASE_URL}/sentiment/search"
-        params = {
-            'query': query,
-            'limit': limit
+        # Use real data from the data processor
+        search_results = data_processor.search_features(query, limit)
+        
+        return {
+            "success": True,
+            "data": search_results,
+            "query": query,
+            "category": category,
+            "limit": limit,
+            "window": window
         }
-        
-        if category:
-            params['category'] = category
-        if window:
-            params['window'] = window
             
-        response = requests.get(url, params=params, timeout=30)
-        
-        if response.status_code == 200:
-            data = response.json()
-            return {
-                "success": True,
-                "data": data,
-                "query": query,
-                "category": category,
-                "limit": limit,
-                "window": window
-            }
-        else:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"API Error: {response.text}"
-            )
-            
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to search features: {str(e)}"
-        )
     except Exception as e:
         raise HTTPException(
             status_code=500,

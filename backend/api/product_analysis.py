@@ -5,16 +5,19 @@ Handles ASIN-based sentiment analysis requests
 
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional, Dict, Any
-import requests
+import sys
 import os
 from dotenv import load_dotenv
+
+# Add core to path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'core'))
 
 load_dotenv()
 
 router = APIRouter()
 
-# AWS API Gateway URL (from your existing deployment)
-API_BASE_URL = os.getenv('API_BASE_URL', 'https://f3157r5ca4.execute-api.us-east-1.amazonaws.com/dev')
+# Import data processor
+from data_processor import data_processor
 
 @router.get("/product/{asin}")
 async def get_product_analysis(
@@ -25,40 +28,12 @@ async def get_product_analysis(
     Get comprehensive sentiment analysis for a specific product (ASIN)
     """
     try:
-        # For now, return mock data until we implement proper data processing
-        mock_data = {
-            "asin": asin,
-            "product_title": f"Sample Product {asin}",
-            "overall_sentiment": {
-                "positive": 65.2,
-                "negative": 20.1,
-                "neutral": 14.7
-            },
-            "sentiment_trend": [
-                {"date": "2024-01-01", "positive": 60, "negative": 25, "neutral": 15},
-                {"date": "2024-02-01", "positive": 62, "negative": 23, "neutral": 15},
-                {"date": "2024-03-01", "positive": 65, "negative": 20, "neutral": 15},
-                {"date": "2024-04-01", "positive": 68, "negative": 18, "neutral": 14},
-                {"date": "2024-05-01", "positive": 65, "negative": 20, "neutral": 15}
-            ],
-            "top_features": [
-                {"feature": "battery life", "sentiment": 0.8, "mentions": 45},
-                {"feature": "build quality", "sentiment": 0.7, "mentions": 38},
-                {"feature": "camera", "sentiment": 0.6, "mentions": 32},
-                {"feature": "price", "sentiment": -0.3, "mentions": 28},
-                {"feature": "screen", "sentiment": 0.5, "mentions": 25}
-            ],
-            "recent_reviews": [
-                {"rating": 5, "text": "Great product, excellent battery life!", "date": "2024-05-01"},
-                {"rating": 4, "text": "Good quality but a bit expensive", "date": "2024-04-28"},
-                {"rating": 5, "text": "Love the camera quality", "date": "2024-04-25"}
-            ],
-            "window": window or "all_time"
-        }
+        # Use real data from the data processor
+        product_data = data_processor.get_product_analysis(asin, window)
         
         return {
             "success": True,
-            "data": mock_data,
+            "data": product_data,
             "asin": asin,
             "window": window
         }
