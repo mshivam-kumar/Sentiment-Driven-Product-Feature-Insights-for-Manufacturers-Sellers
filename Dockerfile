@@ -39,7 +39,7 @@ RUN pip3 install --no-cache-dir \
 COPY backend/ .
 
 # Copy fine-tuned model
-COPY fine_tuned_tinyllama/ ./fine_tuned_tinyllama/
+COPY backend/fine_tuned_tinyllama/ ./fine_tuned_tinyllama/
 
 # Copy real data files
 COPY data_ingest/ ./data_ingest/

@@ -80,48 +80,59 @@ class RAGSystem:
                 # Try to load fine-tuned model first
                 if fine_tuned_model_path and os.path.exists(fine_tuned_model_path):
                     print(f"🎯 Loading fine-tuned model from {fine_tuned_model_path}...")
+                    print(f"📁 Fine-tuned model directory contents: {os.listdir(fine_tuned_model_path)}")
                     try:
                         from peft import PeftModel
                         from transformers import AutoModelForCausalLM, AutoTokenizer
                         
-                        # Load base model
+                        print("📦 Loading base TinyLlama model...")
+                        # Load base model with memory optimization for ECS
                         base_model = AutoModelForCausalLM.from_pretrained(
                             generation_model,
-                            torch_dtype="auto",
-                            device_map="auto"
+                            torch_dtype=torch.float16,  # Use float16 to save memory
+                            device_map="auto",
+                            low_cpu_mem_usage=True
                         )
+                        
+                        print("🔤 Loading tokenizer...")
                         tokenizer = AutoTokenizer.from_pretrained(fine_tuned_model_path)
                         
+                        print("🎯 Loading LoRA adapter...")
                         # Load LoRA model
                         model = PeftModel.from_pretrained(base_model, fine_tuned_model_path)
                         
-                        # Create pipeline
+                        print("⚙️ Creating generation pipeline...")
+                        # Create pipeline with memory optimization
                         self.generation_pipeline = pipeline(
                             "text-generation",
                             model=model,
                             tokenizer=tokenizer,
-                            max_new_tokens=100,
+                            max_new_tokens=50,  # Reduced for memory
                             temperature=0.7,
                             do_sample=True,
-                            torch_dtype="auto",
-                            device_map="auto"
+                            torch_dtype=torch.float16,
+                            device_map="auto",
+                            pad_token_id=tokenizer.eos_token_id
                         )
                         self.is_fine_tuned = True
                         print("✅ Fine-tuned LoRA model loaded successfully!")
                         print("🚀 Using domain-specific fine-tuned TinyLlama for superior performance")
                     except Exception as e:
                         print(f"❌ Failed to load fine-tuned model: {e}")
+                        print(f"❌ Error type: {type(e).__name__}")
+                        import traceback
+                        print(f"❌ Traceback: {traceback.format_exc()}")
                         print("🔄 Falling back to pre-trained TinyLlama...")
-                        # Fallback to pre-trained TinyLlama (not DistilGPT-2)
+                        # Fallback to pre-trained TinyLlama with memory optimization
                         self.generation_pipeline = pipeline(
                             "text-generation",
                             model=generation_model,
                             tokenizer=generation_model,
-                            max_new_tokens=100,
+                            max_new_tokens=50,  # Reduced for memory
                             temperature=0.7,
                             do_sample=True,
                             pad_token_id=2,
-                            torch_dtype="auto",
+                            torch_dtype=torch.float16,  # Use float16 to save memory
                             device_map="auto"
                         )
                         self.is_fine_tuned = False
