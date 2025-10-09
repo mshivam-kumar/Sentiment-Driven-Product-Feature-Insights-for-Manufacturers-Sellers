@@ -79,8 +79,10 @@ class RAGSystem:
             try:
                 # Try to load fine-tuned model first
                 if fine_tuned_model_path and os.path.exists(fine_tuned_model_path):
-                    print(f"🎯 Loading fine-tuned model from {fine_tuned_model_path}...")
-                    print(f"📁 Fine-tuned model directory contents: {os.listdir(fine_tuned_model_path)}")
+                    # Convert to absolute path to avoid HF validation errors
+                    abs_fine_tuned_path = os.path.abspath(fine_tuned_model_path)
+                    print(f"🎯 Loading fine-tuned model from {abs_fine_tuned_path}...")
+                    print(f"📁 Fine-tuned model directory contents: {os.listdir(abs_fine_tuned_path)}")
                     try:
                         from peft import PeftModel
                         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -95,11 +97,11 @@ class RAGSystem:
                         )
                         
                         print("🔤 Loading tokenizer...")
-                        tokenizer = AutoTokenizer.from_pretrained(fine_tuned_model_path)
+                        tokenizer = AutoTokenizer.from_pretrained(abs_fine_tuned_path)
                         
                         print("🎯 Loading LoRA adapter...")
-                        # Load LoRA model
-                        model = PeftModel.from_pretrained(base_model, fine_tuned_model_path)
+                        # Load LoRA model with absolute path
+                        model = PeftModel.from_pretrained(base_model, abs_fine_tuned_path)
                         
                         print("⚙️ Creating generation pipeline...")
                         # Create pipeline with memory optimization
