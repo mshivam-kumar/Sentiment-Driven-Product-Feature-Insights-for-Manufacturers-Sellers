@@ -1,0 +1,57 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "sentiment-analysis-backend",
+      "image": "568672915510.dkr.ecr.us-east-1.amazonaws.com/sentiment-analysis-backend:948f76c142bfd168f5f40d122d8a69a01a64e996",
+      "cpu": 0,
+      "portMappings": [
+        {
+          "containerPort": 8001,
+          "hostPort": 8001,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "PYTHONUNBUFFERED",
+          "value": "1"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/sentiment-analysis-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8001/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      },
+      "systemControls": []
+    }
+  ],
+  "family": "sentiment-analysis-backend-task",
+  "taskRoleArn": "arn:aws:iam::568672915510:role/sentiment-analysis-ecs-task-role",
+  "executionRoleArn": "arn:aws:iam::568672915510:role/sentiment-analysis-ecs-execution-role",
+  "networkMode": "awsvpc",
+  "volumes": [],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "1024",
+  "memory": "4096",
+  "ephemeralStorage": {
+    "sizeInGiB": 100
+  }
+}
