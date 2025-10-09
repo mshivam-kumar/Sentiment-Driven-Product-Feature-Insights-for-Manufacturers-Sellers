@@ -100,8 +100,8 @@ class RAGSystem:
                         tokenizer = AutoTokenizer.from_pretrained(abs_fine_tuned_path)
                         
                         print("🎯 Loading LoRA adapter...")
-                        # Load LoRA model with absolute path
-                        model = PeftModel.from_pretrained(base_model, abs_fine_tuned_path)
+                        # Load LoRA model with absolute path - use local_files_only to avoid HF validation
+                        model = PeftModel.from_pretrained(base_model, abs_fine_tuned_path, local_files_only=True)
                         
                         print("⚙️ Creating generation pipeline...")
                         # Create pipeline with memory optimization

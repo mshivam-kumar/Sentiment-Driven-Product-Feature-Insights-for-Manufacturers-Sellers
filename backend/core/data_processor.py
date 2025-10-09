@@ -171,6 +171,9 @@ class ReviewDataProcessor:
                     # Calculate sentiment based on rating
                     sentiment = (review['rating'] - 3) / 2
                     
+                    # Determine category based on ASIN or content
+                    category = self._determine_category(review['asin'], review['review_text'])
+                    
                     results.append({
                         'asin': review['asin'],
                         'product_title': review['title'] or f'Product {review["asin"]}',
@@ -178,7 +181,7 @@ class ReviewDataProcessor:
                         'sentiment': sentiment,
                         'count': 1,
                         'snippet': review['review_text'][:150] + '...' if len(review['review_text']) > 150 else review['review_text'],
-                        'category': 'Electronics'  # Default category
+                        'category': category
                     })
         
         # Group by ASIN and feature, aggregate sentiment
@@ -215,6 +218,23 @@ class ReviewDataProcessor:
             'total': len(final_results),
             'query': query
         }
+    
+    def _determine_category(self, asin: str, review_text: str) -> str:
+        """Determine product category based on ASIN and review content"""
+        text_lower = review_text.lower()
+        
+        # Beauty-related keywords
+        beauty_keywords = ['hair', 'brush', 'makeup', 'beauty', 'cosmetic', 'skincare', 'shampoo', 'conditioner', 'lipstick', 'foundation']
+        if any(keyword in text_lower for keyword in beauty_keywords):
+            return 'Beauty'
+        
+        # Electronics-related keywords
+        electronics_keywords = ['battery', 'charge', 'electronic', 'device', 'phone', 'computer', 'laptop', 'tablet', 'headphone', 'speaker']
+        if any(keyword in text_lower for keyword in electronics_keywords):
+            return 'Electronics'
+        
+        # Default to Beauty for our dataset (since most of our data is beauty products)
+        return 'Beauty'
     
     def _extract_features_from_reviews(self, reviews: List[Dict]) -> Dict[str, Dict]:
         """Extract features and their sentiment from reviews"""
