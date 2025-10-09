@@ -62,6 +62,11 @@ async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "service": "sentiment-insights-api"}
 
+@app.get("/api/health")
+async def api_health_check():
+    """API health check endpoint for ALB"""
+    return {"status": "healthy", "service": "sentiment-insights-api"}
+
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",
