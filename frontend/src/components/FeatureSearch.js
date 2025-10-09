@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { API_ENDPOINTS } from '../config/api';
 
 const FeatureSearch = () => {
   const [query, setQuery] = useState(() => {
@@ -86,7 +87,7 @@ const FeatureSearch = () => {
       if (window) params.append('window', window);
       params.append('limit', '20');
 
-      const response = await fetch(`http://localhost:8001/api/v1/features/search?${params}`);
+      const response = await fetch(`${API_ENDPOINTS.FEATURE_SEARCH}/search?${params}`);
       const data = await response.json();
 
       if (data.success) {

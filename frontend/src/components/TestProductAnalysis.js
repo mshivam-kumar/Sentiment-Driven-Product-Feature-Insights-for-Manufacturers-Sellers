@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_ENDPOINTS } from '../config/api';
 
 const TestProductAnalysis = () => {
   const [results, setResults] = useState(null);
@@ -12,7 +13,7 @@ const TestProductAnalysis = () => {
 
     try {
       console.log('Testing API call...');
-      const response = await fetch('http://localhost:8001/api/v1/product/B08JTNQFZY');
+      const response = await fetch(`${API_ENDPOINTS.PRODUCT_ANALYSIS}/B08JTNQFZY`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

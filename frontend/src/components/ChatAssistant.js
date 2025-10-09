@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { API_ENDPOINTS } from '../config/api';
 
 const ChatAssistant = () => {
   const [question, setQuestion] = useState('');
@@ -71,7 +72,7 @@ const ChatAssistant = () => {
 
   const checkChatStatus = async () => {
     try {
-      const response = await fetch('http://localhost:8001/api/v1/chat/status');
+      const response = await fetch(`${API_ENDPOINTS.CHAT_ASSISTANT}/status`);
       const data = await response.json();
       setChatStatus(data);
     } catch (err) {
@@ -90,7 +91,7 @@ const ChatAssistant = () => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8001/api/v1/chat/query', {
+      const response = await fetch(`${API_ENDPOINTS.CHAT_ASSISTANT}/query`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

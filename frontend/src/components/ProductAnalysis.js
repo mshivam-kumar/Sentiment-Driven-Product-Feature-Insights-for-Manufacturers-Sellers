@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { API_ENDPOINTS } from '../config/api';
 
 const ProductAnalysis = () => {
   const [asin, setAsin] = useState(() => {
@@ -65,8 +66,8 @@ const ProductAnalysis = () => {
       const params = new URLSearchParams();
       if (window) params.append('window', window);
 
-      console.log(`Making API call to: http://localhost:8001/api/v1/product/${asin}?${params}`);
-      const response = await fetch(`http://localhost:8001/api/v1/product/${asin}?${params}`);
+      console.log(`Making API call to: ${API_ENDPOINTS.PRODUCT_ANALYSIS}/${asin}?${params}`);
+      const response = await fetch(`${API_ENDPOINTS.PRODUCT_ANALYSIS}/${asin}?${params}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
