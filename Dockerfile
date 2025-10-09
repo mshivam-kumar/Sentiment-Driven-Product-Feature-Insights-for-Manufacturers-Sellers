@@ -41,6 +41,9 @@ COPY backend/ .
 # Copy fine-tuned model
 COPY fine_tuned_tinyllama/ ./fine_tuned_tinyllama/
 
+# Copy real data files
+COPY data_ingest/ ./data_ingest/
+
 # Create non-root user
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser

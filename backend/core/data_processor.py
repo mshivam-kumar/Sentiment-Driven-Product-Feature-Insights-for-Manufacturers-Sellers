@@ -13,13 +13,34 @@ class ReviewDataProcessor:
     """Processes real Amazon review data for sentiment analysis"""
     
     def __init__(self, data_dir: str = None):
-        self.data_dir = data_dir or os.path.join(os.path.dirname(__file__), '..', '..', 'data_ingest', 'data_ingest')
+        # Try multiple possible locations for data files
+        possible_dirs = [
+            data_dir,
+            os.path.join(os.path.dirname(__file__), '..', '..', 'data_ingest', 'data_ingest'),  # Local development
+            os.path.join('/app', 'data_ingest', 'data_ingest'),  # Docker container
+            os.path.join(os.getcwd(), 'data_ingest', 'data_ingest'),  # Current working directory
+        ]
+        
+        self.data_dir = None
+        for dir_path in possible_dirs:
+            if dir_path and os.path.exists(dir_path):
+                self.data_dir = dir_path
+                break
+        
+        if not self.data_dir:
+            print("⚠️ Warning: No data directory found. Using sample data only.")
+            self.data_dir = None
+        
         self.reviews_data = []
         self.load_reviews()
     
     def load_reviews(self):
         """Load reviews from JSONL files"""
         try:
+            if not self.data_dir:
+                print("⚠️ No data directory available. Using sample data only.")
+                return
+            
             # Load from multiple data files
             data_files = [
                 'raw_review_All_Beauty.jsonl',
