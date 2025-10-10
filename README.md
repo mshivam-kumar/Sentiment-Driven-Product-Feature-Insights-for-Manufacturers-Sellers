@@ -2,6 +2,18 @@
 
 > **🎯 Full-Stack Web Application**: Modern React frontend + FastAPI backend with AI/ML integration
 
+## 🌐 Live Demo & Resources
+
+**💻 Desktop (Both links work):**
+- http://sentiment-analysis-alb-1018237225.us-east-1.elb.amazonaws.com/
+- http://selleriq.mooo.com/
+
+**📱 Mobile Users:**
+Type `http://selleriq.mooo.com/` directly into your browser — copy-paste may not work on mobile.
+
+**📊 Detailed Reports & AI Chat Examples:**
+🔗 https://drive.google.com/drive/folders/1XWfMFf5BRHWEDv5cupC2YYr4ojJ-YiU0?usp=sharing
+
 ## 🌟 What is SellerIQ?
 
 SellerIQ is an advanced AI-powered product analytics platform that helps manufacturers and sellers understand customer sentiment about specific product features. Built with cutting-edge RAG (Retrieval-Augmented Generation) technology and fine-tuned transformer models, it provides intelligent insights from product reviews.
@@ -45,10 +57,11 @@ SellerIQ is an advanced AI-powered product analytics platform that helps manufac
 - Category-based filtering and analysis
 
 ### **3. AI Chat Assistant** 🤖
-- **Fine-tuned TinyLlama (1.1B parameters)** for domain-specific responses
+- **TinyLlama (1.1B parameters)** with RAG system for intelligent responses
 - Natural language queries about product sentiment
 - Context-aware responses with supporting evidence
 - Real-time chat with model type indicators
+- **Note**: Currently using pre-trained model with robust fallback mechanism
 
 ## 🏗️ Technical Architecture
 
@@ -189,11 +202,12 @@ streamlit run dashboard/streamlit_app.py
 - **Export Options**: Download search results and visualizations
 
 #### **3. AI Chat Assistant**
-- **Fine-tuned TinyLlama**: Domain-specific responses with 85% improvement
+- **TinyLlama (1.1B parameters)**: Powerful language model with RAG integration
 - **Context-Aware**: Understands product-specific language and context
 - **Supporting Evidence**: Shows relevant reviews for each response
 - **Model Indicators**: See which model generated each response
 - **Chat History**: Persistent conversation history
+- **Robust Fallback**: Reliable performance with intelligent error handling
 
 ### **🔧 API Endpoints:**
 - `GET /api/v1/product/{asin}` - Product sentiment analysis
@@ -331,7 +345,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🎯 Try It Now!
 
-**🚀 Live Demo**: [https://selleriq.streamlit.app/](https://selleriq.streamlit.app/)
+**🚀 Live Demo**: 
+- **Desktop**: [http://sentiment-analysis-alb-1018237225.us-east-1.elb.amazonaws.com/](http://sentiment-analysis-alb-1018237225.us-east-1.elb.amazonaws.com/)
+- **Mobile**: [http://selleriq.mooo.com/](http://selleriq.mooo.com/) (type manually in browser)
 
-Experience the power of AI-driven product analytics with our fine-tuned transformer models and intelligent RAG system!# Deployment trigger Thursday 09 October 2025 01:42:43 PM IST
-# Manual deployment trigger Thursday 09 October 2025 02:34:36 PM IST
+**📊 See Results**: [Detailed Reports & AI Chat Examples](https://drive.google.com/drive/folders/1XWfMFf5BRHWEDv5cupC2YYr4ojJ-YiU0?usp=sharing)
+
+Experience the power of AI-driven product analytics with our intelligent RAG system and real-time sentiment analysis!
+
+---
+
+*Last Updated: October 2025 - Full-Stack Web Application with AWS Deployment*
