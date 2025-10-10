@@ -1,6 +1,6 @@
 // API Configuration
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? '' // Use relative URLs in production (same domain as frontend)
+  ? 'http://sentiment-analysis-alb-1018237225.us-east-1.elb.amazonaws.com' // Use ALB URL in production
   : 'http://localhost:8001'; // Use localhost in development
 
 export const API_ENDPOINTS = {
