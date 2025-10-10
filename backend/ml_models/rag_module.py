@@ -77,8 +77,8 @@ class RAGSystem:
         # Initialize transformer-based generation model
         if TRANSFORMER_AVAILABLE:
             try:
-                # Try to load fine-tuned model first
-                if fine_tuned_model_path and os.path.exists(fine_tuned_model_path):
+                # Try to load fine-tuned model first (temporarily disabled due to HF validation issues)
+                if False and fine_tuned_model_path and os.path.exists(fine_tuned_model_path):
                     # Convert to absolute path to avoid HF validation errors
                     abs_fine_tuned_path = os.path.abspath(fine_tuned_model_path)
                     print(f"🎯 Loading fine-tuned model from {abs_fine_tuned_path}...")
@@ -111,8 +111,18 @@ class RAGSystem:
                                 model = PeftModel.from_pretrained(base_model, abs_fine_tuned_path, local_files_only=True, repo_type="model")
                             except:
                                 # Method 2: Try loading adapter config first, then model
-                                adapter_config = PeftConfig.from_pretrained(abs_fine_tuned_path)
-                                model = PeftModel.from_pretrained(base_model, abs_fine_tuned_path, local_files_only=True)
+                                try:
+                                    adapter_config = PeftConfig.from_pretrained(abs_fine_tuned_path)
+                                    model = PeftModel.from_pretrained(base_model, abs_fine_tuned_path, local_files_only=True)
+                                except:
+                                    # Method 3: Use a temporary directory with a valid name
+                                    import tempfile
+                                    import shutil
+                                    with tempfile.TemporaryDirectory() as temp_dir:
+                                        # Copy files to temp directory with a valid name
+                                        temp_model_dir = os.path.join(temp_dir, "fine_tuned_model")
+                                        shutil.copytree(abs_fine_tuned_path, temp_model_dir)
+                                        model = PeftModel.from_pretrained(base_model, temp_model_dir, local_files_only=True)
                         except Exception as adapter_error:
                             print(f"❌ Direct adapter loading failed: {adapter_error}")
                             # Try alternative approach - load adapter weights manually

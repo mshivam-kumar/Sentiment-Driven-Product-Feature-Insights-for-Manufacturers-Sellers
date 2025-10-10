@@ -116,13 +116,23 @@ class ReviewDataProcessor:
         # Get recent reviews
         recent_reviews = sorted(product_reviews, key=lambda x: x['timestamp'], reverse=True)[:5]
         
+        # Convert features to array format expected by frontend
+        features_array = []
+        for feature_name, feature_data in features.items():
+            features_array.append({
+                'feature': feature_name,
+                'sentiment': feature_data['score'],
+                'count': feature_data['count'],
+                'snippets': feature_data['positive_snippets'] + feature_data['negative_snippets']
+            })
+        
         return {
             'asin': asin,
             'product_title': product_reviews[0].get('title', f'Product {asin}') if product_reviews else f'Product {asin}',
-            'overall_sentiment': sentiment_dist,
+            'overall_sentiment': sentiment_score,  # Single number, not object
             'total_reviews': total_reviews,
             'average_rating': avg_rating,
-            'features': features,
+            'features': features_array,  # Array format
             'recent_reviews': [
                 {
                     'rating': int(r['rating']),
@@ -204,7 +214,8 @@ class ReviewDataProcessor:
                 'asin': group[0]['asin'],
                 'product_title': group[0]['product_title'],
                 'feature': group[0]['feature'],
-                'sentiment': avg_sentiment,
+                'score': avg_sentiment,  # Frontend expects 'score', not 'sentiment'
+                'sentiment': avg_sentiment,  # Keep both for compatibility
                 'count': total_count,
                 'snippet': best_snippet,
                 'category': group[0]['category']
@@ -288,26 +299,22 @@ class ReviewDataProcessor:
         return {
             'asin': asin,
             'product_title': f'Sample Product {asin}',
-            'overall_sentiment': {
-                'positive': 65.2,
-                'negative': 20.1,
-                'neutral': 14.7
-            },
+            'overall_sentiment': 0.6,  # Single number, not object
             'total_reviews': 1250,
-            'features': {
-                'battery life': {
-                    'score': 0.8,
+            'features': [  # Array format
+                {
+                    'feature': 'battery life',
+                    'sentiment': 0.8,
                     'count': 45,
-                    'positive_snippets': ['Great battery life', 'Lasts all day', 'Excellent battery performance'],
-                    'negative_snippets': ['Battery drains quickly', 'Poor battery life']
+                    'snippets': ['Great battery life', 'Lasts all day', 'Excellent battery performance', 'Battery drains quickly', 'Poor battery life']
                 },
-                'build quality': {
-                    'score': 0.7,
+                {
+                    'feature': 'build quality',
+                    'sentiment': 0.7,
                     'count': 38,
-                    'positive_snippets': ['Solid build', 'Well constructed', 'Durable design'],
-                    'negative_snippets': ['Feels cheap', 'Poor build quality']
+                    'snippets': ['Solid build', 'Well constructed', 'Durable design', 'Feels cheap', 'Poor build quality']
                 }
-            },
+            ],
             'recent_reviews': [
                 {'rating': 5, 'text': 'Great product, excellent battery life!', 'date': '2024-05-01'},
                 {'rating': 4, 'text': 'Good quality but a bit expensive', 'date': '2024-04-28'}
