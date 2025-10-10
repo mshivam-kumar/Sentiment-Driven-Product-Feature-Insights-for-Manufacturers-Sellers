@@ -144,7 +144,7 @@ SellerIQ is an advanced AI-powered product analytics platform that helps manufac
 
 ## 🚀 Quick Start
 
-### **Option 1: Full-Stack Web Application (Recommended)**
+### **Option 1: Docker Compose (Recommended - Easiest)**
 
 1. **Clone the repository:**
 ```bash
@@ -152,7 +152,7 @@ git clone https://github.com/mshivam-kumar/Sentiment-Driven-Product-Feature-Insi
 cd Sentiment-Driven-Product-Feature-Insights-for-Manufacturers-Sellers
 ```
 
-2. **Start with Docker Compose (Easiest):**
+2. **Start with Docker Compose:**
 ```bash
 docker-compose up --build
 ```
@@ -161,28 +161,221 @@ docker-compose up --build
 - **Frontend**: [http://localhost:3000](http://localhost:3000) - React web interface
 - **Backend API**: [http://localhost:8001](http://localhost:8001) - FastAPI with docs at `/docs`
 
-### **Option 2: Manual Setup**
+**Note**: This will download and run all dependencies automatically. Perfect for local development and testing!
 
-1. **Backend Setup:**
+### **Option 2: Manual Setup (For Development)**
+
+#### **Prerequisites:**
+- **Python 3.8+** with pip
+- **Node.js 16+** with npm
+- **Git** for cloning the repository
+
+#### **Backend Setup:**
 ```bash
+# 1. Navigate to backend directory
 cd backend
+
+# 2. Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# 3. Install dependencies
 pip install -r requirements.txt
+
+# 4. Start the backend server
 python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
-2. **Frontend Setup:**
+#### **Frontend Setup:**
 ```bash
+# 1. Navigate to frontend directory (in a new terminal)
 cd frontend
+
+# 2. Install dependencies
 npm install
+
+# 3. Start development server
+npm start
+# OR build for production:
 npm run build
 cd build && python3 -m http.server 3000
 ```
+
+#### **Access the Application:**
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Backend API**: [http://localhost:8001](http://localhost:8001)
+- **API Documentation**: [http://localhost:8001/docs](http://localhost:8001/docs)
 
 ### **Option 3: Original Streamlit App**
 ```bash
 pip install -r requirements.txt
 streamlit run dashboard/streamlit_app.py
 ```
+
+## 🏠 Local Development Setup
+
+### **📋 System Requirements**
+- **Operating System**: Windows 10+, macOS 10.15+, or Linux
+- **RAM**: Minimum 8GB (16GB recommended for AI models)
+- **Storage**: At least 5GB free space
+- **Internet**: Required for downloading models and dependencies
+
+### **🔧 Detailed Local Setup**
+
+#### **Step 1: Clone and Navigate**
+```bash
+# Clone the repository
+git clone https://github.com/mshivam-kumar/Sentiment-Driven-Product-Feature-Insights-for-Manufacturers-Sellers.git
+cd Sentiment-Driven-Product-Feature-Insights-for-Manufacturers-Sellers
+
+# Verify you have the required files
+ls -la
+```
+
+#### **Step 2: Backend Setup (Python/FastAPI)**
+```bash
+# Navigate to backend
+cd backend
+
+# Create and activate virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+
+# Upgrade pip
+pip install --upgrade pip
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Verify installation
+python -c "import torch, transformers, fastapi; print('✅ All dependencies installed successfully!')"
+```
+
+#### **Step 3: Frontend Setup (React)**
+```bash
+# Navigate to frontend (in a new terminal)
+cd frontend
+
+# Install Node.js dependencies
+npm install
+
+# Verify installation
+npm list --depth=0
+```
+
+#### **Step 4: Data Setup**
+```bash
+# Ensure data files are present
+ls -la data_ingest/
+# Should show: *.jsonl files with review data
+
+# If data is missing, the app will use sample data
+```
+
+#### **Step 5: Start the Application**
+
+**Terminal 1 - Backend:**
+```bash
+cd backend
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+```
+
+**Terminal 2 - Frontend:**
+```bash
+cd frontend
+npm start
+```
+
+#### **Step 6: Access the Application**
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Backend API**: [http://localhost:8001](http://localhost:8001)
+- **API Docs**: [http://localhost:8001/docs](http://localhost:8001/docs)
+- **Health Check**: [http://localhost:8001/health](http://localhost:8001/health)
+
+### **🐳 Docker Alternative (Recommended)**
+
+If you prefer containerized setup:
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Or run in detached mode
+docker-compose up -d --build
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### **🔍 Troubleshooting**
+
+#### **Common Issues:**
+
+**1. Port Already in Use:**
+```bash
+# Kill processes on ports 3000 and 8001
+# On Windows:
+netstat -ano | findstr :3000
+netstat -ano | findstr :8001
+taskkill /PID <PID> /F
+
+# On macOS/Linux:
+lsof -ti:3000 | xargs kill -9
+lsof -ti:8001 | xargs kill -9
+```
+
+**2. Python Dependencies Issues:**
+```bash
+# Clear pip cache
+pip cache purge
+
+# Reinstall requirements
+pip install -r requirements.txt --force-reinstall
+```
+
+**3. Node.js Issues:**
+```bash
+# Clear npm cache
+npm cache clean --force
+
+# Delete node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**4. Model Loading Issues:**
+```bash
+# Check available memory
+free -h  # Linux
+system_profiler SPHardwareDataType  # macOS
+
+# Models require ~4GB RAM minimum
+```
+
+### **📊 Local Testing**
+
+Once running locally, test all features:
+
+1. **Product Analysis**: Enter ASIN `B08JTNQFZY`
+2. **Feature Search**: Search for "quality" or "design"
+3. **AI Chat**: Ask "What do customers say about product quality?"
+4. **API Testing**: Visit [http://localhost:8001/docs](http://localhost:8001/docs)
+
+### **💡 Development Tips**
+
+- **Hot Reload**: Both frontend and backend support hot reload during development
+- **API Testing**: Use the interactive docs at `/docs` endpoint
+- **Logs**: Check terminal output for debugging information
+- **Data**: Modify `data_ingest/` files to test with different datasets
 
 ## 🎯 How to Use
 
