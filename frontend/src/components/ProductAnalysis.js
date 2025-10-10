@@ -77,27 +77,17 @@ const ProductAnalysis = () => {
       console.log('API Response:', data);
 
       if (data.success) {
-        // Transform the data to match expected format
-        const features = data.data.features || {};
-        console.log('🔍 Raw features object:', features);
-        console.log('🔍 Features keys:', Object.keys(features));
-        console.log('🔍 Features count:', Object.keys(features).length);
+        // Backend now sends features as an array, so use it directly
+        const features = data.data.features || [];
+        console.log('🔍 Raw features array:', features);
+        console.log('🔍 Features count:', features.length);
         
-        const featuresList = Object.entries(features).map(([featureName, featureData]) => {
-          console.log(`Processing feature: ${featureName}`, featureData);
-          return {
-            feature: featureName,
-            sentiment: featureData.score || 0,
-            count: featureData.count || 0,
-            snippets: [...(featureData.positive_snippets || []), ...(featureData.negative_snippets || [])].slice(0, 3)
-          };
-        });
-        
+        // Features are already in the correct format from backend
         const transformedData = {
           asin: data.data.asin,
           overall_sentiment: data.data.overall_sentiment,
           total_reviews: data.data.total_reviews,
-          features: featuresList
+          features: features
         };
         
         console.log('🔄 Transformed data:', transformedData);
