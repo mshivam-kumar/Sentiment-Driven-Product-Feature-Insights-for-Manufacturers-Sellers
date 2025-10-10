@@ -86,6 +86,7 @@ class RAGSystem:
                     try:
                         from peft import PeftModel
                         from transformers import AutoModelForCausalLM, AutoTokenizer
+                        import torch
                         
                         print("📦 Loading base TinyLlama model...")
                         # Load base model with memory optimization for ECS
